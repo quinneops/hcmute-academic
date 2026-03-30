@@ -56,8 +56,8 @@ export async function GET(request: Request) {
     if (error) throw error
 
     // Get unique proposal IDs to fetch supervisor info
-    const proposalIds = [...new Set((data || []).map((r: any) => r.proposal_id).filter(Boolean))]
-    const supervisorIds = [...new Set((data || []).map((r: any) => r.proposal_supervisor_id).filter(Boolean))]
+    const proposalIds = Array.from(new Set((data || []).map((r: any) => r.proposal_id).filter(Boolean)))
+    const supervisorIds = Array.from(new Set((data || []).map((r: any) => r.proposal_supervisor_id).filter(Boolean)))
 
     // Fetch proposals to get supervisor info
     let proposalsMap = new Map()

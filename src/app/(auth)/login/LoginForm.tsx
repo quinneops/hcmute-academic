@@ -95,7 +95,6 @@ export function LoginForm() {
         console.error('Auth callback handling error:', err)
       }
     }
-
     handleAuthCallback()
   }, [searchParams, router])
 
@@ -112,7 +111,7 @@ export function LoginForm() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `https://ute.hoaithuong.id.vn/auth/callback`,
+          redirectTo: `https://hcmute-academic.vercel.app/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

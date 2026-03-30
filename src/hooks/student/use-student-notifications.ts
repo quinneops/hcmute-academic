@@ -16,6 +16,7 @@ export interface Notification {
   priority: string
   action_url: string | null
   action_label: string | null
+  metadata?: any
 }
 
 const typeIcons: Record<string, string> = {

@@ -204,6 +204,25 @@ export const api = {
 
     schedule: () =>
       request<any>(`/lecturer/schedule`),
+
+    appointments: {
+      list: (params?: { start_date?: string; end_date?: string; status?: string }) =>
+        request<any>(`/lecturer/appointments`, { params }),
+      create: (data: any) =>
+        request<any>(`/lecturer/appointments`, { method: 'POST', body: data }),
+      update: (id: string, data: any) =>
+        request<any>(`/lecturer/appointments/${id}`, { method: 'PATCH', body: data }),
+      delete: (id: string) =>
+        request<any>(`/lecturer/appointments/${id}`, { method: 'DELETE' }),
+    },
+  },
+
+  // Student Appointments
+  student: {
+    appointments: {
+      list: (params?: { status?: string }) =>
+        request<any>(`/student/appointments`, { params }),
+    },
   },
 
   // Admin

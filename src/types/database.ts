@@ -291,6 +291,30 @@ export interface DocumentRequest {
   updated_at: string
 }
 
+export interface Appointment {
+  id: string
+  lecturer_id: string
+  student_id: string | null
+  student_ids: string[] | null
+  is_group_appointment: boolean | null
+  type: string
+  scheduled_at: string
+  end_at: string | null
+  duration_minutes: number | null
+  location: string | null
+  room: string | null
+  title: string
+  description: string | null
+  thesis_title: string | null
+  status: string
+  notes: string | null
+  cancellation_reason: string | null
+  council_name: string | null
+  meeting_link: string | null
+  created_at: string
+  updated_at: string
+}
+
 // Database type for Supabase client
 export interface Database {
   public: {
@@ -374,6 +398,11 @@ export interface Database {
         Row: DocumentRequest
         Insert: Omit<DocumentRequest, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Omit<DocumentRequest, 'id' | 'created_at'>>
+      }
+      appointments: {
+        Row: Appointment
+        Insert: Omit<Appointment, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Appointment, 'id' | 'created_at'>>
       }
     }
     Functions: {
