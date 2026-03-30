@@ -1,0 +1,187 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Claude Code state (SENSITIVE - session data)
+.omc/
+.gitnexus/
+
+# Next.js build artifacts
+.next/
+out/
+build/
+dist/
+
+# Production mode
+next-env.d.ts
+
+# Environment variables (SENSITIVE)
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.*.local
+.env.local.example
+
+# Supabase (SENSITIVE - contains database credentials)
+.supabase/
+supabase/config.toml.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Testing
+coverage/
+.nyc_output/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# TypeScript cache
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Stylelint cache
+.stylelintcache
+
+# Parcel cache
+.cache/
+.parcel-cache/
+
+# Yarn
+yarn-error.log
+.yarn-integrity
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# npm
+package-lock.json
+
+# pnpm
+pnpm-lock.yaml
+
+# Optional npm cache directory
+.npm/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Vercel
+.vercel
+
+# Playwright
+.playwright/
+test-results/
+
+# Turbo
+.turbo
+
+# GraphQL generated
+__generated__/
+
+# Sentry
+.sentryclirc
+
+# AWS
+.aws/
+
+# Firebase
+.firebaserc
+firebase-debug.log
+firestore-debug.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Logs
+logs/
+*.log
+
+# Database backups (may contain sensitive data)
+*.sql
+*.dump
+backups/
+
+# Certificates and keys (SENSITIVE)
+*.pem
+*.key
+*.crt
+*.cer
+*.pfx
+*.p12
+
+# SSH keys (SENSITIVE)
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.ppk
+
+# API keys and secrets (SENSITIVE)
+secrets/
+credentials/
+*.credentials
+*.credentials.json
+
+# Local configuration overrides
+config.local.js
+config.local.ts
+settings.local.json
+
+# Mac OS metadata
+.AppleDouble
+.LSOverride
+
+# Windows thumbnail cache
+*.db
+*._*
+
+# Backup files
+*.bak
+*.backup
+*~

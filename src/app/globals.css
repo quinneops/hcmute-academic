@@ -1,0 +1,221 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Academic Nexus Global Styles
+ *
+ * Based on "The Prestigious Curator" design direction:
+ * - No-Line Rule: Structure via tonal transitions, not borders
+ * - Layered Surface: UI as stacked academic papers
+ * - Editorial Typography: Be Vietnam Pro + Inter
+ */
+
+@layer base {
+  :root {
+    /* Academic Editorial Color Tokens */
+    --primary: 225 100% 21%;       /* #002068 */
+    --primary-container: 217 100% 30%; /* #003399 */
+    --primary-fixed: 225 100% 93%;  /* #dce1ff */
+    --primary-fixed-dim: 225 100% 86%; /* #b5c4ff */
+
+    --secondary: 207 8% 37%;       /* #576066 */
+    --secondary-container: 207 23% 89%; /* #dbe4eb */
+
+    --tertiary: 43 100% 22%;       /* #735c00 */
+    --tertiary-container: 43 65% 49%;  /* #cca730 */
+    --tertiary-fixed: 43 100% 78%;     /* #ffe088 */
+
+    /* Surface Hierarchy */
+    --background: 210 29% 97%;       /* #f8f9fb */
+    --surface: 210 29% 97%;          /* #f8f9fb */
+    --surface-container-lowest: 0 0% 100%; /* #ffffff */
+    --surface-container-low: 210 29% 96%;  /* #f2f4f6 */
+    --surface-container: 210 22% 94%;      /* #eceef0 */
+    --surface-container-high: 210 22% 92%; /* #e6e8ea */
+    --surface-container-highest: 210 17% 90%; /* #e0e3e5 */
+
+    /* Content */
+    --on-surface: 207 9% 12%;      /* #191c1e */
+    --on-surface-variant: 235 9% 29%; /* #444653 */
+
+    /* Semantic */
+    --error: 357 78% 41%;          /* #ba1a1a */
+    --error-container: 11 100% 92%; /* #ffdad6 */
+
+    /* Utility */
+    --outline: 218 11% 49%;        /* #747684 */
+    --outline-variant: 220 13% 80%; /* #c4c5d5 */
+
+    /* shadcn/ui compatibility */
+    --border: 210 29% 92%;
+    --input: 210 29% 92%;
+    --ring: 225 100% 21%;
+  }
+
+  * {
+    @apply border-outline-variant/15;
+  }
+
+  body {
+    @apply bg-surface text-on-surface antialiased;
+    font-feature-settings: "cv11", "ss01";
+    font-smooth: always;
+  }
+
+  /* Editorial Typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline tracking-tight;
+  }
+
+  h1 {
+    @apply text-display-sm font-extrabold;
+  }
+
+  h2 {
+    @apply text-headline-lg font-bold;
+  }
+
+  h3 {
+    @apply text-title-lg font-bold;
+  }
+
+  /* Material Symbols */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+    display: inline-block;
+    line-height: 1;
+  }
+
+  .material-symbols-outlined[style*="FILL"] {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  /* Custom Scrollbar (subtle, editorial) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-surface-container-low;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-outline-variant/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-outline-variant/50;
+  }
+
+  /* Focus styles - accessible, editorial */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-surface-container-lowest;
+  }
+
+  /* Mesh gradient background for login pages */
+  .bg-mesh {
+    background-color: #f8f9fb;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(0, 51, 153, 0.03) 0, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(0, 32, 104, 0.05) 0, transparent 50%);
+  }
+}
+
+@layer components {
+  /* Card Variants - No-Line Rule */
+  .card-surface {
+    @apply bg-surface-container-lowest rounded-xl shadow-ambient-lg;
+  }
+
+  .card-elevated {
+    @apply bg-surface-container-lowest rounded-xl shadow-elevated-md;
+  }
+
+  /* Button Variants */
+  .btn-primary {
+    @apply bg-primary text-on-primary font-semibold px-5 py-2.5 rounded-lg
+           hover:shadow-glow-primary hover:opacity-95 transition-all
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary-container text-primary font-semibold px-5 py-2.5 rounded-lg
+           hover:bg-secondary-container/80 transition-all
+           active:scale-[0.98];
+  }
+
+  .btn-tertiary {
+    @apply bg-transparent text-primary font-semibold px-5 py-2.5 rounded-lg
+           hover:bg-primary-fixed transition-all
+           active:scale-[0.98];
+  }
+
+  /* Status Badges */
+  .badge-approved {
+    @apply bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider;
+  }
+
+  .badge-pending {
+    @apply bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider;
+  }
+
+  .badge-rejected {
+    @apply bg-error-container text-error px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider;
+  }
+
+  /* Ghost Border - subtle divider when needed */
+  .ghost-border {
+    @apply border border-outline-variant/15;
+  }
+}
+
+@layer utilities {
+  /* Typography utilities */
+  .text-display-sm {
+    font-size: 2.25rem;
+    letter-spacing: -0.02em;
+  }
+
+  .text-display-md {
+    font-size: 2.75rem;
+    letter-spacing: -0.02em;
+  }
+
+  .text-display-lg {
+    font-size: 3.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  /* Animation utilities */
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Glassmorphism */
+  .glass {
+    @apply bg-surface/80 backdrop-blur-md;
+  }
+}
