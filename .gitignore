@@ -147,6 +147,9 @@ logs/
 *.dump
 backups/
 
+# Except Supabase migrations (safe to commit)
+!supabase/migrations/*.sql
+
 # Certificates and keys (SENSITIVE)
 *.pem
 *.key
