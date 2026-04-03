@@ -2,15 +2,12 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import { useStudentDashboard } from '@/hooks/student/use-student-dashboard'
 import { useStudentProfile } from '@/hooks/student/use-student-profile'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { getAuthClient } from '@/lib/supabase/client'
 
 const progressSteps = [
@@ -80,7 +77,7 @@ export default function StudentDashboardPage() {
       <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-secondary text-sm">Đang tải...</p>
+          <p className="text-on-surface-variant text-sm">Đang tải...</p>
         </div>
       </div>
     )
@@ -90,7 +87,7 @@ export default function StudentDashboardPage() {
     ? {
         name: profile.full_name || profile.email.split('@')[0],
         email: profile.email,
-        avatar: profile.avatar_url || '',
+        avatar: profile.avatar_url || 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQ8MNlnrDHc5LO4LZc75_OClKYdfqr9B11eTgJhDU5v4Jp3ZpPtaebIDNkawcLk-_FFcjW6UQpueA3-MXHWoC9eLC0ZJC9nWO2SRWBI8oELoQBr5q0SuyBwzYbahT-NREcu5ThuV24rsXpQq4oAk9g0IMiK2cXoeSKMVHOael7WJyWhMNZUrtpu0ZsUsl4j0ceHSS3HXYdEdoFi7l1fmY7x3JwzfYGrh0sNFnVXgNszborPk1WcFYGcjkjC_VRZl_gTjhyZmopg2E',
       }
     : {
         name: 'Sinh viên',
@@ -105,29 +102,29 @@ export default function StudentDashboardPage() {
     <Shell
       role="student"
       user={user}
-      breadcrumb={[{ label: 'Bảng điều khiển' }]}
+      breadcrumb={[{ label: 'Sinh viên' }, { label: 'Bảng điều khiển' }]}
       notifications={stats?.unreadNotifications || 0}
     >
-      {/* Page Header */}
+      {/* Hero Header */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
         <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight mb-2">
+          <h2 className="text-4xl font-headline font-extrabold text-primary tracking-tight mb-2">
             Tổng quan Khóa luận
           </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
+          <p className="text-on-surface-variant font-medium">
             Năm học 2024-2025 • Học kỳ 2
           </p>
         </div>
         <div className="flex gap-3">
           <Button
             variant="outline"
-            className="border-primary-fixed text-primary hover:bg-surface-container-low"
+            className="px-5 py-2.5 bg-white text-primary border border-primary-fixed font-semibold rounded-lg text-sm hover:bg-surface-container-low transition-all"
             onClick={() => router.push('/student/calendar')}
           >
             Xem lịch biểu
           </Button>
           <Button
-            className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary"
+            className="px-5 py-2.5 bg-primary text-white font-semibold rounded-lg text-sm hover:shadow-lg hover:shadow-primary/20 transition-all"
             onClick={() => router.push('/student/documents')}
           >
             Tải hướng dẫn
@@ -138,86 +135,63 @@ export default function StudentDashboardPage() {
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Registered Thesis */}
-        <Card className="bg-surface-container-lowest border-l-4 border-primary shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-primary-fixed text-primary rounded-lg">
-                <span className="material-symbols-outlined text-xl">book</span>
-              </div>
-              <Badge variant="secondary" className="text-[10px] font-bold uppercase">
-                Đã đăng ký
-              </Badge>
+        <Card className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-l-4 border-primary">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-primary-fixed text-primary rounded-lg">
+              <span className="material-symbols-outlined">book</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats?.registrationsCount || 0}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Đề tài đã đăng ký</p>
-          </CardContent>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Đã đăng ký</span>
+          </div>
+          <div className="text-3xl font-headline font-black text-on-surface">
+            {stats?.registrationsCount || 0} Đề tài
+          </div>
+          <p className="text-xs text-slate-500 mt-1">Đã xác nhận cho HK2</p>
         </Card>
 
         {/* Status */}
-        <Card className="bg-surface-container-lowest border-l-4 border-emerald-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">verified</span>
-              </div>
-              <Badge variant="secondary" className="text-[10px] font-bold uppercase">
-                Trạng thái
-              </Badge>
+        <Card className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-l-4 border-emerald-500">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+              <span className="material-symbols-outlined">verified</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">Đã duyệt</div>
-            <div className="flex items-center gap-1 text-emerald-600 mt-1">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-              <span className="text-label-md font-medium">Đang thực hiện</span>
-            </div>
-          </CardContent>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Trạng thái</span>
+          </div>
+          <div className="text-3xl font-headline font-black text-on-surface">Đã duyệt</div>
+          <div className="text-xs text-emerald-600 mt-1 font-medium flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Đang thực hiện
+          </div>
         </Card>
 
         {/* Progress */}
-        <Card className="bg-surface-container-lowest border-l-4 border-blue-400 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">bolt</span>
-              </div>
-              <Badge variant="secondary" className="text-[10px] font-bold uppercase">
-                Hoàn thành
-              </Badge>
+        <Card className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-l-4 border-blue-400">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+              <span className="material-symbols-outlined">bolt</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {Math.round(progressPercent)}%
-            </div>
-            <Progress value={progressPercent} className="h-2 mt-3 bg-secondary-container" indicatorClassName="bg-primary" />
-          </CardContent>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Hoàn thành</span>
+          </div>
+          <div className="text-3xl font-headline font-black text-on-surface">
+            {Math.round(progressPercent)}%
+          </div>
+          <div className="w-full bg-secondary-container h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="bg-primary h-full rounded-full" style={{ width: `${progressPercent}%` }}></div>
+          </div>
         </Card>
 
         {/* Feedback */}
-        <Card className="bg-surface-container-lowest border-l-4 border-tertiary shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-tertiary-fixed text-tertiary rounded-lg">
-                <span className="material-symbols-outlined text-xl">mark_chat_unread</span>
-              </div>
-              <Badge variant="secondary" className="text-[10px] font-bold uppercase">
-                Phản hồi
-              </Badge>
+        <Card className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-l-4 border-tertiary">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-tertiary-fixed text-tertiary rounded-lg">
+              <span className="material-symbols-outlined">mark_chat_unread</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {feedback && !feedback.is_read ? '1' : '0'}
-            </div>
-            <p className="text-label-md text-tertiary mt-1 font-bold">
-              {feedback && !feedback.is_read ? 'Chưa đọc từ GVHD' : 'Không có mới'}
-            </p>
-          </CardContent>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Phản hồi</span>
+          </div>
+          <div className="text-3xl font-headline font-black text-on-surface">
+            {feedback && !feedback.is_read ? '1' : '0'}
+          </div>
+          <p className="text-xs text-tertiary mt-1 font-bold">
+            {feedback && !feedback.is_read ? 'Chưa đọc từ GVHD' : 'Không có mới'}
+          </p>
         </Card>
       </div>
 
@@ -225,221 +199,247 @@ export default function StudentDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Thesis Info & Submissions */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Thesis Proposal Info Card */}
-          {(stats?.latestRegistrationTitle || supervisorName) && (
-            <Card className="bg-gradient-to-r from-primary to-primary-container text-white shadow-xl shadow-primary/10 border-none">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="material-symbols-outlined text-white/80">school</span>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/70">Đề tài khóa luận</span>
-                    </div>
-                    <h3 className="text-xl font-bold mb-1">{stats?.latestRegistrationTitle || 'Chưa xác định'}</h3>
-                    {supervisorName && (
-                      <p className="text-sm text-white/80 flex items-center gap-1 mt-2">
-                        <span className="material-symbols-outlined text-sm">person</span>
-                        GVHD: <strong>{supervisorName}</strong>
-                      </p>
-                    )}
-                  </div>
+          {/* Thesis Details Card */}
+          <Card className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100/50">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex gap-2">
+                <span className="px-3 py-1 bg-primary-fixed text-primary text-[10px] font-bold rounded uppercase tracking-wider">
+                  HK2 2024-2025
+                </span>
+                {stats?.latestRegistrationStatus === 'approved' && (
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase tracking-wider flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px]">lock</span> ĐÃ DUYỆT
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <h1 className="text-2xl font-headline font-bold text-primary mb-4 leading-tight">
+              {stats?.latestRegistrationTitle || 'Chưa xác định đề tài'}
+            </h1>
+
+            <div className="flex flex-wrap gap-2 mb-8">
+              <span className="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-medium rounded-full border border-slate-100">#AI</span>
+              <span className="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-medium rounded-full border border-slate-100">#MachineLearning</span>
+              <span className="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-medium rounded-full border border-slate-100">#Thesis</span>
+              <span className="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-medium rounded-full border border-slate-100">#DataScience</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-surface-container-low rounded-xl">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm">
+                  <span className="material-symbols-outlined text-2xl">person</span>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">GIẢNG VIÊN HƯỚNG DẪN</p>
+                  <p className="font-bold text-on-surface">{supervisorName || 'Chưa xác định'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm">
+                  <span className="material-symbols-outlined text-2xl">fingerprint</span>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">MÃ SỐ ĐỀ TÀI</p>
+                  <p className="font-bold text-on-surface">UTE-IT-2024-{stats?.registrationsCount ? String(stats.registrationsCount).padStart(4, '0') : '0000'}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
 
           {/* Submissions & Scores */}
-          {submissions.length > 0 && (
-            <Card className="bg-surface-container-lowest shadow-ambient-lg border-none">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="font-headline font-bold text-primary text-lg flex items-center gap-2">
-                    <span className="material-symbols-outlined">graduation_cap</span>
-                    Điểm số các vòng nộp
-                  </CardTitle>
+          {submissions.length > 0 ? (
+            <Card className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100/50">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                  <span className="material-symbols-outlined">graduation_cap</span>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {submissions.map((sub) => (
-                    <div
-                      key={sub.id}
-                      className="flex items-center justify-between p-4 bg-surface-container-low rounded-lg border border-outline-variant/10"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={cn(
-                          "w-12 h-12 rounded-full flex items-center justify-center",
-                          sub.status === 'graded' ? "bg-emerald-50 text-emerald-600" :
-                          sub.status === 'submitted' ? "bg-blue-50 text-blue-600" :
+                <h3 className="text-lg font-headline font-bold text-primary">Điểm số các vòng nộp</h3>
+              </div>
+              <div className="space-y-3">
+                {submissions.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-lg hover:border-primary-fixed hover:shadow-sm transition-all group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center",
+                        sub.status === 'graded' ? "bg-emerald-50 text-emerald-600" :
+                        sub.status === 'submitted' ? "bg-blue-50 text-blue-600" :
+                        "bg-slate-100 text-slate-500"
+                      )}>
+                        <span className="material-symbols-outlined text-xl">
+                          {sub.status === 'graded' ? 'check_circle' :
+                           sub.status === 'submitted' ? 'upload_file' : 'schedule'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-on-surface">{sub.round_name}</p>
+                        <p className="text-[10px] text-slate-400">
+                          {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString('vi-VN') : 'Chưa nộp'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {sub.score !== null && sub.score !== undefined ? (
+                        <>
+                          <p className="text-2xl font-black text-primary">{sub.score}</p>
+                          {sub.grade && (
+                            <p className="text-[10px] font-bold text-secondary">Hạng: {sub.grade}</p>
+                          )}
+                        </>
+                      ) : (
+                        <span className={cn(
+                          "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
+                          sub.status === 'graded' ? "bg-emerald-100 text-emerald-600" :
+                          sub.status === 'submitted' ? "bg-blue-100 text-blue-600" :
                           "bg-slate-100 text-slate-500"
                         )}>
-                          <span className="material-symbols-outlined text-xl">
-                            {sub.status === 'graded' ? 'check_circle' :
-                             sub.status === 'submitted' ? 'upload_file' : 'schedule'}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-on-surface">{sub.round_name}</p>
-                          <p className="text-[10px] text-secondary">
-                            {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString('vi-VN') : 'Chưa nộp'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        {sub.score !== null && sub.score !== undefined ? (
-                          <>
-                            <p className="text-2xl font-black text-primary">{sub.score}</p>
-                            {sub.grade && (
-                              <p className="text-[10px] font-bold text-secondary">Hạng: {sub.grade}</p>
-                            )}
-                          </>
-                        ) : (
-                          <Badge variant="outline" className={cn(
-                            sub.status === 'graded' ? "border-emerald-300 text-emerald-600" :
-                            sub.status === 'submitted' ? "border-blue-300 text-blue-600" :
-                            "border-slate-300 text-slate-500"
-                          )}>
-                            {sub.status === 'graded' ? 'Đã chấm' :
-                             sub.status === 'submitted' ? 'Đã nộp' : 'Chờ nộp'}
-                          </Badge>
-                        )}
-                      </div>
+                          {sub.status === 'graded' ? 'Đã chấm' :
+                           sub.status === 'submitted' ? 'Đã nộp' : 'Chờ nộp'}
+                        </span>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
+                  </div>
+                ))}
+              </div>
             </Card>
-          )}
+          ) : null}
+
           {/* Thesis Progress Flow */}
-          <Card className="bg-surface-container-lowest shadow-ambient-lg border-none">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="font-headline font-bold text-primary text-lg">
-                  Lộ trình Khóa luận
-                </CardTitle>
-                <Badge className="bg-primary-fixed text-primary text-[10px] font-bold uppercase tracking-widest">
-                  Giai đoạn hiện tại: Nộp tài liệu
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="relative flex justify-between items-center">
-                {/* Progress Line */}
-                <div className="absolute top-5 left-0 w-full h-[2px] bg-slate-100 z-0" />
-                <div
-                  className="absolute top-5 left-0 h-[2px] bg-primary z-0 transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
-                />
+          <Card className="bg-white p-8 rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 mb-8">
+            <div className="flex justify-between items-center mb-10">
+              <h3 className="text-lg font-headline font-bold text-primary">Lộ trình Khóa luận</h3>
+              <span className="px-3 py-1 bg-primary-fixed text-primary text-[11px] font-bold rounded-full uppercase tracking-widest">
+                GIAI ĐOẠN HIỆN TẠI: NỘP TÀI LIỆU
+              </span>
+            </div>
+            <div className="relative flex justify-between">
+              {/* Background Progress Line */}
+              <div className="absolute top-5 left-0 w-full h-[2px] bg-slate-100 z-0"></div>
+              <div
+                className="absolute top-5 left-0 h-[2px] bg-primary z-0 transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              ></div>
 
-                {/* Steps */}
-                {progressSteps.map((step, index) => {
-                  const isCompleted = thesisProgress[index]?.completed || index < completedSteps
-                  const isCurrent = !isCompleted && index === completedSteps
-                  const isPending = !isCompleted && !isCurrent
+              {/* Progress Steps */}
+              {progressSteps.map((step, index) => {
+                const isCompleted = thesisProgress[index]?.completed || index < completedSteps
+                const isCurrent = !isCompleted && index === completedSteps
+                const isPending = !isCompleted && !isCurrent
 
-                  return (
-                    <div key={step.id} className="relative z-10 flex flex-col items-center gap-3">
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center shadow-md",
-                          isCompleted && "bg-primary text-white",
-                          isCurrent && "bg-white border-4 border-primary text-primary ring-4 ring-primary-fixed",
-                          isPending && "bg-slate-200 text-slate-500 opacity-40"
-                        )}
-                      >
-                        {isCompleted ? (
-                          <span className="material-symbols-outlined text-xl">check</span>
-                        ) : isCurrent ? (
-                          <span className="material-symbols-outlined text-xl">upload_file</span>
-                        ) : (
-                          <span className="material-symbols-outlined text-xl">flag</span>
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className={cn(
-                          "text-xs font-bold",
-                          isCurrent || isCompleted ? "text-on-surface" : "text-slate-400"
-                        )}>
-                          {step.label}
-                        </p>
-                        <p className="text-[10px] text-slate-400">
-                          {isCompleted ? 'Đã xong' : isCurrent ? 'Đang thực hiện' : ''}
-                        </p>
-                      </div>
+                const stepIcons = [
+                  { completed: 'check_circle', current: 'assignment', pending: 'flag' },
+                  { completed: 'check_circle', current: 'edit_note', pending: 'description' },
+                  { completed: 'check_circle', current: 'fact_check', pending: 'pending_actions' },
+                  { completed: 'check_circle', current: 'psychology', pending: 'auto_awesome' },
+                  { completed: 'check_circle', current: 'upload_file', pending: 'send' },
+                  { completed: 'check_circle', current: 'school', pending: 'emoji_events' },
+                ]
+
+                const icon = isCompleted ? stepIcons[index].completed
+                  : isCurrent ? stepIcons[index].current
+                  : stepIcons[index].pending
+
+                return (
+                  <div key={step.id} className="relative z-10 flex flex-col items-center gap-3 group">
+                    <div
+                      className={cn(
+                        "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300",
+                        isCompleted && "bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/30",
+                        isCurrent && "bg-white border-2 border-primary text-primary shadow-lg shadow-primary/30 scale-110",
+                        isPending && "bg-slate-100 text-slate-400"
+                      )}
+                    >
+                      <span className="material-symbols-outlined text-[22px]">{icon}</span>
                     </div>
-                  )
-                })}
-              </div>
-            </CardContent>
+                    <div className="text-center">
+                      <p className={cn(
+                        "text-xs font-bold transition-colors",
+                        isCompleted ? "text-emerald-700" : isCurrent ? "text-primary" : "text-slate-400"
+                      )}>{step.label}</p>
+                      <p className="text-[10px] text-slate-400">
+                        {isCompleted ? 'Đã xong' : isCurrent ? 'Đang chạy' : 'Chưa bắt đầu'}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </Card>
 
           {/* Recent Documents */}
-          <Card className="bg-surface-container-lowest shadow-ambient-lg border-none">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="font-headline font-bold text-primary text-lg flex items-center gap-2">
+          <Card className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100/50">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-tertiary/10 text-tertiary rounded-lg">
                   <span className="material-symbols-outlined">folder</span>
-                  Tài liệu tham khảo
-                </CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push('/student/documents')}
-                >
-                  Xem tất cả
-                </Button>
+                </div>
+                <h3 className="text-lg font-headline font-bold text-primary">Tài liệu tham khảo</h3>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/student/documents')}
+                className="text-xs font-bold uppercase tracking-widest"
+              >
+                Xem tất cả
+              </Button>
+            </div>
+            <div className="space-y-4">
               {recentDocuments.length === 0 ? (
-                <p className="text-secondary text-sm text-center py-8">Không có tài liệu nào</p>
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest text-center py-8">Không có tài liệu nào</p>
               ) : (
                 recentDocuments.map((doc) => (
                   <div
                     key={doc.id}
-                    className="group flex items-center justify-between p-4 bg-surface-container-lowest rounded-lg border border-slate-100 hover:border-primary-fixed hover:bg-blue-50/30 transition-all"
+                    className="p-4 bg-white border border-slate-100 rounded-lg hover:border-primary-fixed hover:shadow-sm transition-all flex justify-between items-center group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-red-50 text-red-600 flex items-center justify-center rounded">
+                      <div className="w-10 h-10 bg-slate-100 text-slate-500 flex items-center justify-center rounded">
                         <span className="material-symbols-outlined">picture_as_pdf</span>
                       </div>
                       <div>
                         <p className="text-sm font-bold text-on-surface">{doc.title}</p>
-                        <p className="text-[10px] text-secondary">
-                          {new Date(doc.created_at).toLocaleDateString('vi-VN')} • {(doc.file_size || 0 / 1024 / 1024).toFixed(1)} MB
+                        <p className="text-[10px] text-slate-400">
+                          {new Date(doc.created_at).toLocaleDateString('vi-VN')} • {((doc.file_size || 0) / 1024 / 1024).toFixed(1)} MB
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => window.open(doc.file_url, '_blank')}>
-                        <span className="material-symbols-outlined">download</span>
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => window.open(doc.file_url, '_blank')}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <span className="material-symbols-outlined">download</span>
+                    </Button>
                   </div>
                 ))
               )}
-            </CardContent>
+            </div>
           </Card>
         </div>
 
         {/* Right Column - Supervisor Feedback */}
         <div className="lg:col-span-1">
-          <Card className="bg-primary text-white shadow-xl shadow-primary/10 relative overflow-hidden h-full">
+          <Card className="bg-primary text-white p-8 rounded-xl shadow-xl shadow-primary/10 relative overflow-hidden h-full">
             {/* Decorative Icon */}
             <div className="absolute -right-4 -bottom-4 opacity-10">
               <span className="material-symbols-outlined text-[120px]">forum</span>
             </div>
 
-            <CardContent className="relative z-10 flex flex-col h-full p-8">
+            <div className="relative z-10 flex flex-col h-full">
               {/* Header */}
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-12 h-12 rounded-full border-2 border-white/20 overflow-hidden bg-white/20 flex items-center justify-center">
                   <span className="material-symbols-outlined text-2xl">person</span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm">Phản hồi từ Giảng viên</h4>
-                  <p className="text-[10px] text-on-primary-container font-medium">
-                    {feedback ? new Date(feedback.created_at).toLocaleDateString('vi-VN') : 'Không có'}
+                  <h4 className="font-bold text-sm text-white">Phản hồi từ Giảng viên</h4>
+                  <p className="text-[10px] text-white/80 font-medium">
+                    {feedback ? `Hoạt động: ${new Date(feedback.created_at).toLocaleDateString('vi-VN')}` : 'Không có'}
                   </p>
                 </div>
               </div>
@@ -453,19 +453,17 @@ export default function StudentDashboardPage() {
                       {feedback.content}
                     </p>
                     <div className="mt-6 flex justify-end">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-on-primary-container">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
                         {feedback.lecturer_name || 'Giảng viên'}
                       </span>
                     </div>
                   </div>
 
-                  {/* Reply Button */}
                   <Button
-                    className="w-full py-4 bg-tertiary text-on-tertiary-fixed font-bold rounded-lg"
+                    className="w-full py-4 bg-tertiary text-on-tertiary-fixed font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-tertiary-container transition-all shadow-lg active:scale-95"
                     onClick={() => router.push('/student/feedback')}
                   >
-                    <span className="material-symbols-outlined text-sm mr-2">reply</span>
-                    Phản hồi Giảng viên
+                    <span className="material-symbols-outlined text-sm">reply</span> Phản hồi Giảng viên
                   </Button>
                 </>
               ) : (
@@ -475,7 +473,7 @@ export default function StudentDashboardPage() {
                   </p>
                 </div>
               )}
-            </CardContent>
+            </div>
           </Card>
         </div>
       </div>

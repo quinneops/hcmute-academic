@@ -111,7 +111,7 @@ export function LoginForm() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `https://hcmute-academic.vercel.app/auth/callback`,
+          redirectTo: `http://localhost:3001/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

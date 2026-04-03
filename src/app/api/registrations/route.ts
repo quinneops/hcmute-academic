@@ -64,7 +64,7 @@ export async function GET(request: Request) {
     if (proposalIds.length > 0) {
       const { data: proposals } = await supabaseAdmin
         .from('proposals')
-        .select('id, supervisor_id, supervisor_name, supervisor_email')
+        .select('id, supervisor_id, supervisor_name, supervisor_email, category, tags')
         .in('id', proposalIds)
 
       if (proposals) {
@@ -73,6 +73,8 @@ export async function GET(request: Request) {
             supervisor_id: p.supervisor_id,
             supervisor_name: p.supervisor_name,
             supervisor_email: p.supervisor_email,
+            category: p.category,
+            tags: p.tags || [],
           })
         })
       }
@@ -101,6 +103,8 @@ export async function GET(request: Request) {
         id: reg.id,
         proposal_id: reg.proposal_id,
         proposal_title: reg.proposal_title,
+        proposal_category: proposalInfo.category || null,
+        proposal_tags: proposalInfo.tags || [],
         proposal_supervisor_id: reg.proposal_supervisor_id,
         status: reg.status,
         motivation_letter: reg.motivation_letter,

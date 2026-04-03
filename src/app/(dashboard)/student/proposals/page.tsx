@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -17,6 +17,8 @@ export default function ProposalsPage() {
   const [showRegisterDialog, setShowRegisterDialog] = React.useState<string | null>(null)
   const [motivationLetter, setMotivationLetter] = React.useState('')
   const [pageError, setPageError] = React.useState<string | null>(null)
+  const [selectedLecturer, setSelectedLecturer] = React.useState('all')
+  const [selectedCategory, setSelectedCategory] = React.useState('all')
   const [aiRecommendations, setAiRecommendations] = React.useState<Array<{
     proposal_id: string
     title: string
@@ -53,7 +55,7 @@ export default function ProposalsPage() {
     ? {
         name: profile.full_name || profile.email.split('@')[0],
         email: profile.email,
-        avatar: profile.avatar_url || '',
+        avatar: profile.avatar_url || 'https://lh3.googleusercontent.com/aida-static/aida-image-placeholder',
       }
     : {
         name: 'Sinh viên',
@@ -62,7 +64,6 @@ export default function ProposalsPage() {
       }
 
   const handleRegister = async (proposalId: string) => {
-    // Check if student already has an active registration
     if (myRegistrations && myRegistrations.length > 0) {
       const activeReg = myRegistrations.find(r => r.status === 'pending' || r.status === 'approved')
       if (activeReg) {
@@ -118,6 +119,31 @@ export default function ProposalsPage() {
 
   const hasActiveRegistration = myRegistrations.some(r => r.status === 'pending' || r.status === 'approved')
 
+  // Get featured proposals (first 2 for hero banners)
+  const featuredProposalsList = React.useMemo(() => {
+    return availableProposals.slice(0, 2)
+  }, [availableProposals])
+
+  // Filter proposals
+  const filteredProposals = React.useMemo(() => {
+    return availableProposals.filter(proposal => {
+      if (selectedLecturer !== 'all' && proposal.supervisor_name !== selectedLecturer) return false
+      if (selectedCategory !== 'all' && !proposal.tags.some(tag => tag.toLowerCase().includes(selectedCategory.toLowerCase()))) return false
+      return true
+    })
+  }, [availableProposals, selectedLecturer, selectedCategory])
+
+  // Get unique lecturers and categories for filters
+  const lecturers = React.useMemo(() => {
+    const set = new Set(availableProposals.map(p => p.supervisor_name).filter(Boolean))
+    return Array.from(set)
+  }, [availableProposals])
+
+  const categories = React.useMemo(() => {
+    const set = new Set(availableProposals.flatMap(p => p.tags))
+    return Array.from(set)
+  }, [availableProposals])
+
   if (isLoading || !userId) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
@@ -133,82 +159,82 @@ export default function ProposalsPage() {
     <Shell
       role="student"
       user={user}
-      breadcrumb={[{ label: 'Bảng điều khiển', href: '/student' }, { label: 'Đề cương' }]}
+      breadcrumb={[{ label: 'Sinh viên' }, { label: 'Gợi ý đề tài' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Đề Cương Khóa Luận
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý và theo dõi đề cương đã đăng ký
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          className="border-purple-300 text-purple-700 bg-purple-50 hover:bg-purple-100"
-          onClick={handleLoadRecommendations}
-          disabled={isLoadingRecommendations}
-        >
-          {isLoadingRecommendations ? (
-            <><span className="material-symbols-outlined text-sm mr-1 animate-spin">progress_activity</span>Đang phân tích...</>
-          ) : (
-            <><span className="material-symbols-outlined text-sm mr-1">auto_awesome</span>Gợi ý cho bạn</>
-          )}
-        </Button>
-      </div>
-
-      {/* Warning Banner for students with active registration */}
-      {hasActiveRegistration && (
-        <Card className="bg-amber-50 border-amber-200 mb-8">
-          <CardContent className="py-6">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined">warning</span>
-              </div>
-              <div>
-                <h4 className="font-bold text-amber-800 mb-1">Bạn đã đăng ký đề tài</h4>
-                <p className="text-sm text-amber-700 leading-relaxed">
-                  Mỗi sinh viên chỉ được đăng ký <strong>1 đề tài duy nhất</strong>. Bạn cần hủy đăng ký hiện tại để đăng ký đề tài mới.
+      {/* Hero Banners Section */}
+      {featuredProposalsList.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {featuredProposalsList.map((proposal, index) => {
+            const isDisabled = hasActiveRegistration
+            return (
+              <div
+                key={proposal.id}
+                className={cn(
+                  "relative h-48 rounded-xl overflow-hidden group",
+                  !isDisabled && "cursor-pointer"
+                )}
+                onClick={() => !isDisabled && setShowRegisterDialog(proposal.id)}
+              >
+              <div className={cn(
+                "absolute inset-0 opacity-90 transition-opacity group-hover:opacity-100",
+                index === 0
+                  ? "bg-gradient-to-r from-primary to-primary-container"
+                  : "bg-gradient-to-r from-[#004e92] to-[#000428]"
+              )}></div>
+              <img
+                className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
+                src={index === 0
+                  ? "https://lh3.googleusercontent.com/aida-public/AB6AXuBENOa2wHo90_wG8lxVy7bWxElCxh3LSExWEe7FIwnjAlPL6iWz0FNWGkvLkL4FnDIbYfsRWn4vsgrMpjKOQrN3LrcpRhqGjFsue6FI9TaNVAzW94gE5SY-Ii2qx6-i8pvPF69rjwaXLp-__0a84OSD2vc3wgFGokgm4B-zAWpJzyULkFSofky_uB4NN4FAipXfSBYs3O-IJdhoNFm4zBHte6qKEzlO5q2bJxXLvZoa6ZLrMWKV3a5PtvZLruITGfGQFqufMXdUmA"
+                  : "https://lh3.googleusercontent.com/aida-public/AB6AXuCGiqlP5El_5yoc1Dgzk_rNfKk69O3574ZeoVqcoEhaBLLJoat6LbG3NwPpx5-AgaUAvxCvUENq4ktbRW60FuWz6JKak5U-8y4mu5t4PY-8-trpz2uqrV1G0HOfqruozRewD0YOUCJ7slE2UVN0VjIs0La1860fWAE_upbWBmVzS38EeMHPyLJF1Qr9JoT1UHXSy4gbeVL54K0dYXiAHmbSMYzqEYU63hwHFZeZJUBtYD0U1RCGFflR4mi2j6ihlORhqHx6YZRv6Q"
+                }
+                alt={proposal.title}
+              />
+              <div className="relative h-full p-6 flex flex-col justify-center">
+                <span className={cn(
+                  "text-[10px] uppercase tracking-widest font-bold mb-2 w-fit",
+                  index === 0
+                    ? "bg-tertiary-container/20 text-tertiary-fixed-dim"
+                    : "bg-emerald-500/20 text-emerald-300"
+                )}>
+                  {index === 0 ? 'Nổi bật' : 'Đề tài mới'}
+                </span>
+                <h3 className="text-white text-xl font-bold font-headline mb-2 leading-tight">{proposal.title}</h3>
+                <p className="text-blue-100/80 text-sm">
+                  {proposal.category || 'Đề tài khóa luận'}
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          )})}
+        </div>
       )}
 
       {/* AI Recommendations */}
       {aiRecommendations.length > 0 && (
-        <Card className="bg-purple-50 border-purple-200 mb-8">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
-                <span className="material-symbols-outlined text-sm">psychology</span>
+        <Card className="bg-purple-50 border-purple-200 mb-6">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                <span className="material-symbols-outlined">psychology</span>
               </div>
-              <CardTitle className="font-headline font-bold text-purple-900 text-lg">Đề tài phù hợp với bạn</CardTitle>
+              <h3 className="text-lg font-bold font-headline text-purple-900">Đề tài phù hợp với bạn</h3>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {aiRecommendations.map((rec, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {aiRecommendations.map((rec) => (
                 <div
                   key={rec.proposal_id}
                   className="p-4 bg-white rounded-lg border border-purple-100 hover:shadow-md transition-all cursor-pointer"
                   onClick={() => setShowRegisterDialog(rec.proposal_id)}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <h3 className="text-sm font-bold text-on-surface mb-1">{rec.title}</h3>
-                      <p className="text-xs text-secondary">{rec.supervisor}</p>
-                    </div>
-                    <Badge className="bg-purple-100 text-purple-700 font-bold">
-                      {rec.match_score}% match
+                    <h3 className="text-sm font-bold text-on-surface flex-1">{rec.title}</h3>
+                    <Badge className="bg-purple-100 text-purple-700 font-bold text-xs ml-2">
+                      {rec.match_score}%
                     </Badge>
                   </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {rec.match_reasons.slice(0, 3).map((reason, i) => (
+                  <p className="text-xs text-secondary mb-2">{rec.supervisor}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {rec.match_reasons.slice(0, 2).map((reason, i) => (
                       <span key={i} className="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded">
                         {reason}
                       </span>
@@ -217,166 +243,276 @@ export default function ProposalsPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
+          </div>
         </Card>
       )}
+
+      {/* Filter Section */}
+      <div className="bg-surface-container-low p-6 rounded-xl mb-6 flex flex-wrap items-end gap-6">
+        <div className="flex-1 min-w-[200px]">
+          <label className="block text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-2 font-label">Giảng viên hướng dẫn</label>
+          <select
+            className="w-full bg-surface-container-lowest border-none rounded-lg text-sm p-3 focus:ring-2 focus:ring-primary shadow-sm shadow-blue-900/5"
+            value={selectedLecturer}
+            onChange={(e) => setSelectedLecturer(e.target.value)}
+          >
+            <option value="all">Tất cả giảng viên</option>
+            {lecturers.map((lecturer) => (
+              <option key={lecturer} value={lecturer}>{lecturer}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1 min-w-[200px]">
+          <label className="block text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-2 font-label">Lĩnh vực đề tài</label>
+          <select
+            className="w-full bg-surface-container-lowest border-none rounded-lg text-sm p-3 focus:ring-2 focus:ring-primary shadow-sm shadow-blue-900/5"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="all">Tất cả lĩnh vực</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex gap-3">
+          {(selectedLecturer !== 'all' || selectedCategory !== 'all') && (
+            <Button
+              variant="outline"
+              className="h-[46px] px-6 border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-100 transition-all"
+              onClick={() => {
+                setSelectedLecturer('all')
+                setSelectedCategory('all')
+              }}
+            >
+              <span className="material-symbols-outlined text-sm">clear_all</span>
+              Xóa bộ lọc
+            </Button>
+          )}
+          <Button className="h-[46px] px-6 bg-primary text-white font-bold text-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">filter_list</span>
+            Lọc đề tài ({filteredProposals.length})
+          </Button>
+        </div>
+      </div>
 
       {/* My Registrations */}
       {myRegistrations.length > 0 && (
-        <Card className="bg-surface-container-lowest shadow-ambient-lg border-none mb-8">
-          <CardHeader>
-            <CardTitle className="font-headline font-bold text-primary text-lg">
-              Đăng ký của tôi
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {myRegistrations.map((reg) => (
-                <div
-                  key={reg.id}
-                  className="p-6 bg-surface-container-low rounded-lg border border-transparent hover:border-primary-fixed/30 transition-all"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-title-md font-headline font-bold text-on-surface">
-                          {reg.proposal_title}
-                        </h3>
-                        <Badge className={cn(
-                          reg.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                          reg.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                          reg.status === 'rejected' ? 'bg-error-container text-error' :
-                          'bg-slate-100 text-slate-600'
-                        )}>
-                          {reg.status === 'approved' ? 'Đã duyệt' :
-                           reg.status === 'pending' ? 'Chờ duyệt' :
-                           reg.status === 'rejected' ? 'Bị từ chối' : 'Đã hủy'}
-                        </Badge>
+        <div className="mb-6">
+          <h2 className="text-xl font-bold font-headline text-primary mb-4">Đăng ký của tôi</h2>
+          <div className="space-y-4">
+            {myRegistrations.map((reg) => (
+              <div
+                key={reg.id}
+                className="bg-surface-container-lowest p-6 rounded-xl flex items-center justify-between gap-6 hover:bg-surface-bright transition-colors shadow-sm shadow-blue-900/5 border-l-4 border-primary"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Badge className={cn(
+                      reg.status === 'approved' ? 'bg-emerald-500/10 text-emerald-700' :
+                      reg.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                      reg.status === 'rejected' ? 'bg-error-container text-error' :
+                      'bg-slate-100 text-slate-600'
+                    )}>
+                      {reg.status === 'approved' ? 'Đã duyệt' :
+                       reg.status === 'pending' ? 'Chờ duyệt' :
+                       reg.status === 'rejected' ? 'Bị từ chối' : 'Đã hủy'}
+                    </Badge>
+                    <span className="text-on-surface-variant text-xs font-medium">Mã: {reg.id.slice(0, 8)}</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-on-surface font-headline mb-2 truncate">{reg.proposal_title}</h3>
+                  <div className="flex flex-wrap items-center gap-4 mb-3">
+                    {reg.proposal_category && (
+                      <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant">
+                        <span className="material-symbols-outlined text-sm">category</span>
+                        Lĩnh vực: {reg.proposal_category}
+                      </span>
+                    )}
+                    {reg.proposal_tags && reg.proposal_tags.length > 0 && (
+                      <div className="flex gap-1">
+                        {reg.proposal_tags.slice(0, 3).map((tag, i) => (
+                          <span key={i} className="text-[10px] bg-primary-fixed text-primary px-2 py-0.5 rounded font-medium">
+                            #{tag}
+                          </span>
+                        ))}
                       </div>
-                      {reg.supervisor_name && (
-                        <p className="text-sm text-secondary flex items-center gap-2">
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {reg.supervisor_name && (
+                      <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                        <span className="material-symbols-outlined text-sm">person</span>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">GVHD</p>
+                          <p className="font-medium">{reg.supervisor_name}</p>
+                        </div>
+                      </div>
+                    )}
+                    {reg.supervisor_email && (
+                      <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                        <span className="material-symbols-outlined text-sm">email</span>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Email</p>
+                          <p className="font-medium">{reg.supervisor_email}</p>
+                        </div>
+                      </div>
+                    )}
+                    {reg.motivation_letter && (
+                      <div className="md:col-span-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="material-symbols-outlined text-sm text-primary">menu_book</span>
+                          <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Thư động lực</p>
+                        </div>
+                        <div className="p-3 bg-surface-container-low rounded-lg border border-slate-100">
+                          <p className="text-sm text-on-surface italic line-clamp-3">{reg.motivation_letter}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {reg.review_notes && (
+                    <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg inline-block">
+                      <p className="text-xs text-blue-800 flex items-start gap-1">
+                        <span className="material-symbols-outlined text-sm">feedback</span>
+                        {reg.review_notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest mb-1">Đăng ký ngày</p>
+                    <p className="text-sm font-bold text-primary font-headline">{new Date(reg.submitted_at).toLocaleDateString('vi-VN')}</p>
+                  </div>
+                  {reg.status === 'pending' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-error border-error hover:bg-error-container"
+                      onClick={() => handleWithdraw(reg.id)}
+                    >
+                      Hủy đăng ký
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Available Proposals List */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold font-headline text-primary tracking-tight">Danh sách đề tài</h2>
+          <span className="text-sm text-on-surface-variant">Hiển thị {filteredProposals.length} đề tài</span>
+        </div>
+
+        <div className="space-y-4">
+          {filteredProposals.length === 0 ? (
+            <Card className="p-12 text-center">
+              <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">search_off</span>
+              <p className="text-on-surface-variant font-medium">Không có đề tài nào phù hợp với bộ lọc</p>
+            </Card>
+          ) : (
+            filteredProposals.map((proposal) => {
+              const slotsRemaining = proposal.max_students - proposal.current_students
+              const isFull = slotsRemaining <= 0
+              const isRegistered = myRegistrations.some(r => r.proposal_id === proposal.id)
+              const hasAnyActiveRegistration = myRegistrations.some(r => r.status === 'pending' || r.status === 'approved')
+              const isDisabled = isFull || isRegistered || hasAnyActiveRegistration
+
+              return (
+                <div
+                  key={proposal.id}
+                  className={cn(
+                    "p-6 rounded-xl flex items-center justify-between gap-6 transition-all shadow-sm",
+                    isDisabled
+                      ? "bg-surface-container-low opacity-70 border-l-4 border-slate-300"
+                      : "bg-surface-container-lowest hover:bg-surface-bright border-l-4 border-primary"
+                  )}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Badge className={cn(
+                        isFull
+                          ? "bg-error-container/20 text-error"
+                          : "bg-emerald-500/10 text-emerald-700"
+                      )}>
+                        {isFull ? 'Đã đủ SV' : 'Mở đăng ký'}
+                      </Badge>
+                      <span className="text-on-surface-variant text-xs font-medium">Mã số: {proposal.id.slice(0, 8)}</span>
+                    </div>
+                    <h3 className={cn(
+                      "text-lg font-bold text-on-surface font-headline mb-1 truncate",
+                      !isDisabled && "group-hover:text-primary transition-colors"
+                    )}>{proposal.title}</h3>
+                    <div className="flex items-center gap-6 text-on-surface-variant">
+                      {proposal.supervisor_name && (
+                        <div className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-sm">person</span>
-                          {reg.supervisor_name}
-                        </p>
+                          <span className="text-sm font-medium">GVHD: {proposal.supervisor_name}</span>
+                        </div>
                       )}
-                      {reg.review_notes && (
-                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <p className="text-sm text-blue-800 flex items-start gap-2">
-                            <span className="material-symbols-outlined text-sm">feedback</span>
-                            {reg.review_notes}
-                          </p>
+                      {proposal.tags.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">category</span>
+                          <span className="text-sm">Lĩnh vực: {proposal.tags.join(', ')}</span>
                         </div>
                       )}
                     </div>
-                    {reg.status === 'pending' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-error border-error"
-                        onClick={() => handleWithdraw(reg.id)}
-                      >
-                        Hủy đăng ký
-                      </Button>
-                    )}
                   </div>
-                  <div className="text-xs text-secondary">
-                    Đăng ký ngày: {new Date(reg.submitted_at).toLocaleDateString('vi-VN')}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Available Proposals */}
-      <Card className="bg-surface-container-lowest shadow-ambient-lg border-none">
-        <CardHeader>
-          <CardTitle className="font-headline font-bold text-primary text-lg">
-            Đề tài khả dụng
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {availableProposals.length === 0 ? (
-            <p className="text-secondary text-sm text-center py-8">
-              Không có đề tài nào khả dụng
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {availableProposals.map((proposal) => (
-                <div
-                  key={proposal.id}
-                  className="p-6 bg-surface-container-low rounded-lg hover:bg-surface-container-low/80 transition-all border border-transparent hover:border-primary-fixed/30"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-title-md font-headline font-bold text-on-surface mb-2">
-                        {proposal.title}
-                      </h3>
-                      {proposal.description && (
-                        <p className="text-sm text-secondary mb-3">{proposal.description}</p>
-                      )}
-                      {proposal.supervisor_name && (
-                        <p className="text-sm text-secondary flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">person</span>
-                          Giảng viên: {proposal.supervisor_name}
-                        </p>
-                      )}
+                  <div className="flex items-center gap-6">
+                    <div className="text-center">
+                      <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-widest mb-1">Số lượng còn</p>
+                      <p className={cn(
+                        "text-2xl font-bold font-headline",
+                        isFull ? "text-slate-400" : "text-primary"
+                      )}>{slotsRemaining}<span className="text-sm text-on-surface-variant font-normal">/{proposal.max_students}</span></p>
                     </div>
                     <Button
-                      className="bg-primary hover:bg-primary/90 text-white"
-                      onClick={() => setShowRegisterDialog(proposal.id)}
-                      disabled={isRegistering === proposal.id || hasActiveRegistration}
+                      className={cn(
+                        "px-6 py-3 rounded-lg font-bold text-sm transition-all active:scale-95 whitespace-nowrap",
+                        isDisabled
+                          ? "bg-surface-container text-slate-400 cursor-not-allowed"
+                          : "bg-secondary-container text-on-secondary-fixed hover:bg-primary-container hover:text-white"
+                      )}
+                      onClick={() => !isDisabled && setShowRegisterDialog(proposal.id)}
+                      disabled={isDisabled || isRegistering === proposal.id}
                     >
                       {isRegistering === proposal.id ? (
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : isRegistered ? (
+                        'Đã đăng ký'
+                      ) : hasAnyActiveRegistration ? (
+                        ''
                       ) : (
-                        <>
-                          <span className="material-symbols-outlined text-sm mr-1">login</span>
-                          Đăng ký
-                        </>
+                        'Chọn đề tài'
                       )}
                     </Button>
                   </div>
-
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {proposal.tags.map((tag) => (
-                      <Badge key={tag} variant="outline" className="rounded-full border-slate-200 text-xs">
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-secondary">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">visibility</span>
-                        {proposal.views_count} lượt xem
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">group</span>
-                        {proposal.current_students}/{proposal.max_students} sinh viên
-                      </span>
-                    </div>
-                    <span>Đăng ngày: {new Date(proposal.created_at).toLocaleDateString('vi-VN')}</span>
-                  </div>
                 </div>
-              ))}
-            </div>
+              )
+            })
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Registration Dialog */}
       {showRegisterDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">Đăng ký đề tài</h3>
-            <p className="text-sm text-secondary mb-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <span className="material-symbols-outlined">assignment</span>
+              </div>
+              <h3 className="text-lg font-bold font-headline text-primary">Đăng ký đề tài</h3>
+            </div>
+            <p className="text-sm text-on-surface-variant mb-4">
               Bạn có chắc chắn muốn đăng ký đề tài này?
             </p>
             <textarea
-              className="w-full p-3 border border-outline-variant rounded-lg mb-4 text-sm"
+              className="w-full p-3 border border-outline-variant rounded-lg mb-4 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
               rows={4}
               placeholder="Thư động lực (tùy chọn)..."
               value={motivationLetter}
@@ -393,11 +529,15 @@ export default function ProposalsPage() {
                 Hủy
               </Button>
               <Button
-                className="bg-primary text-white"
+                className="bg-primary text-white font-bold"
                 onClick={() => handleRegister(showRegisterDialog)}
                 disabled={isRegistering === showRegisterDialog}
               >
-                Xác nhận đăng ký
+                {isRegistering === showRegisterDialog ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  'Xác nhận đăng ký'
+                )}
               </Button>
             </div>
           </div>

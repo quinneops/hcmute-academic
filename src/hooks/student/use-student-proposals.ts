@@ -23,11 +23,15 @@ export interface Proposal {
 export interface Registration {
   id: string
   proposal_id: string
+  proposal_title: string
+  proposal_category: string | null
+  proposal_tags: string[]
   status: string
   submitted_at: string
   review_notes: string | null
-  proposal_title: string
   supervisor_name: string | null
+  supervisor_email: string | null
+  motivation_letter: string | null
 }
 
 export function useStudentProposals(studentId: string) {
@@ -62,7 +66,7 @@ export function useStudentProposals(studentId: string) {
         description: p.description,
         category: p.category,
         tags: p.tags || [],
-        supervisor_name: p.supervisor?.full_name,
+        supervisor_name: p.supervisor_name || p.supervisor?.full_name,
         max_students: p.max_students,
         current_students: p.registrations_count || 0,
         views_count: p.views_count || 0,
@@ -73,11 +77,15 @@ export function useStudentProposals(studentId: string) {
       setMyRegistrations((registrationsData as any[]).map((r: any) => ({
         id: r.id,
         proposal_id: r.proposal_id,
+        proposal_title: r.proposal_title,
+        proposal_category: r.proposal_category || r.proposal?.category,
+        proposal_tags: r.proposal_tags || r.proposal?.tags || [],
         status: r.status,
         submitted_at: r.submitted_at,
         review_notes: r.review_notes,
-        proposal_title: r.proposal?.title,
-        supervisor_name: r.proposal?.supervisor?.full_name,
+        supervisor_name: r.supervisor_name || r.proposal?.supervisor?.full_name,
+        supervisor_email: r.supervisor_email,
+        motivation_letter: r.motivation_letter,
       })))
     } catch (err: any) {
       console.error('Proposals fetch error:', err)

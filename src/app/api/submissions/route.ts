@@ -36,6 +36,7 @@ export async function GET(request: Request) {
 
     // Extract submissions from embedded data
     const submissions: any[] = []
+    const SUBMISSION_TYPES = ['proposal', 'draft', 'interim', 'final', 'slide', 'defense']
     ;(registrations || []).forEach((reg: any) => {
       const regSubmissions = reg.submissions || []
       regSubmissions.forEach((sub: any) => {
@@ -53,6 +54,8 @@ export async function GET(request: Request) {
           feedback: sub.grades?.[0]?.feedback || null,
           thesis_title: reg.proposal_title || 'Khóa luận tốt nghiệp',
           registration_id: reg.id,
+          submission_type: sub.submission_type || SUBMISSION_TYPES[(sub.round_number - 1) % SUBMISSION_TYPES.length],
+          document_number: sub.document_number || 1,
         })
       })
     })

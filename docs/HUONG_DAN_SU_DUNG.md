@@ -112,7 +112,7 @@
 **Bước 1:** Truy cập trang login
 
 ```
-https://ute.hoaithuong.id.vn/login
+https://hcmute-academic.vercel.app
 ```
 
 **Bước 2:** Click "Đăng nhập với Google Sinh viên"

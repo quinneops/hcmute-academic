@@ -12,6 +12,64 @@ const supabaseAdmin = createClient(
   }
 )
 
+// Submission type mapping
+const SUBMISSION_TYPES = ['proposal', 'draft', 'interim', 'final', 'slide', 'defense']
+
+// Round number to submission type mapping (1-indexed)
+function getSubmissionTypeFromRound(roundNumber: number): string {
+  const typeIndex = (roundNumber - 1) % SUBMISSION_TYPES.length
+  return SUBMISSION_TYPES[typeIndex]
+}
+
+// Get the next required submission type based on existing submissions
+function getNextRequiredType(submissions: any[]): string {
+  if (!submissions || submissions.length === 0) {
+    return 'proposal'
+  }
+
+  // Find the highest order type that has been graded
+  const gradedTypes = submissions
+    .filter((s: any) => s.status === 'graded')
+    .map((s: any) => s.round_number || 0)
+
+  if (gradedTypes.length === 0) {
+    // No graded submissions - must complete proposal first
+    return 'proposal'
+  }
+
+  const maxGradedRound = Math.max(...gradedTypes)
+  const nextTypeIndex = maxGradedRound % SUBMISSION_TYPES.length
+
+  // If all rounds completed
+  if (nextTypeIndex >= SUBMISSION_TYPES.length) {
+    return 'defense'
+  }
+
+  return SUBMISSION_TYPES[nextTypeIndex]
+}
+
+// Validate sequential submission order
+function validateSequentialSubmission(registration: any, submissionType: string) {
+  const submissions = registration.submissions || []
+  const nextRequiredType = getNextRequiredType(submissions)
+
+  // Check if submission type matches required type
+  if (submissionType !== nextRequiredType) {
+    // Find what type is actually required
+    const currentTypeIndex = SUBMISSION_TYPES.indexOf(nextRequiredType)
+    const requiredOrder = SUBMISSION_TYPES.slice(0, currentTypeIndex + 1)
+
+    return {
+      valid: false,
+      error: `Phải nộp theo thứ tự. Bước tiếp theo là: ${nextRequiredType}`,
+      requiredOrder: requiredOrder,
+      currentRound: nextRequiredType,
+    }
+  }
+
+  return { valid: true }
+}
+
 /**
  * POST /api/submissions/upload
  * Upload file to Supabase Storage and create submission record
@@ -41,11 +99,19 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File
     const student_id = formData.get('student_id') as string
     const registration_id = formData.get('registration_id') as string
-    const round_number = parseInt(formData.get('round_number') as string, 10)
+    const submission_type = formData.get('submission_type') as string  // Now using submission_type
 
-    if (!file || !student_id || !registration_id || !round_number) {
+    if (!file || !student_id || !registration_id || !submission_type) {
       return NextResponse.json(
-        { error: 'Missing required fields: file, student_id, registration_id, round_number' },
+        { error: 'Missing required fields: file, student_id, registration_id, submission_type' },
+        { status: 400 }
+      )
+    }
+
+    // Validate submission_type is valid
+    if (!SUBMISSION_TYPES.includes(submission_type)) {
+      return NextResponse.json(
+        { error: `Invalid submission_type. Must be one of: ${SUBMISSION_TYPES.join(', ')}` },
         { status: 400 }
       )
     }
@@ -61,9 +127,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden: Not your registration' }, { status: 403 })
     }
 
+    // Validate sequential submission order
+    const validationResult = validateSequentialSubmission(registration, submission_type)
+    if (!validationResult.valid) {
+      return NextResponse.json({
+        error: validationResult.error,
+        required_order: validationResult.requiredOrder,
+        current_round: validationResult.currentRound,
+      }, { status: 409 })
+    }
+
     // Upload file to Supabase Storage
     const fileExt = file.name.split('.').pop()
-    const fileName = `${student_id}/submissions/${registration_id}/round-${round_number}-${Date.now()}.${fileExt}`
+    const fileName = `${student_id}/submissions/${registration_id}/${submission_type}-${Date.now()}.${fileExt}`
 
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from('submissions')
@@ -92,12 +168,22 @@ export async function POST(request: NextRequest) {
     // Get existing submissions from registration
     const submissions = registration.submissions || []
 
+    // Calculate document number for this submission type
+    const sameTypeSubmissions = submissions.filter((s: any) => s.submission_type === submission_type)
+    const documentNumber = sameTypeSubmissions.length + 1
+
+    // Get submission type order for round_number calculation
+    const typeIndex = SUBMISSION_TYPES.indexOf(submission_type)
+    const roundNumber = typeIndex + 1
+
     // Create new submission record
     const newSubmission = {
       id: `sub-${Date.now()}`,
-      round_id: `round-${round_number}`,
-      round_number,
-      round_name: `Round ${round_number}`,
+      round_id: `round-${roundNumber}`,
+      round_number: roundNumber,
+      round_name: `${submission_type.charAt(0).toUpperCase() + submission_type.slice(1)} - Document ${documentNumber}`,
+      submission_type: submission_type,
+      document_number: documentNumber,
       file_url: urlData.publicUrl,
       file_name: file.name,
       file_size: file.size,
@@ -125,7 +211,8 @@ export async function POST(request: NextRequest) {
     console.log('[Submissions API] File uploaded successfully:', {
       fileName: file.name,
       fileSize: file.size,
-      round: round_number,
+      submissionType: submission_type,
+      documentNumber,
       registrationId: registration_id,
     })
 
