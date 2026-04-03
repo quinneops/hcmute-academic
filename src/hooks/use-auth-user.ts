@@ -14,6 +14,8 @@ export interface UserProfile {
   full_name: string | null
   avatar_url: string | null
   role: UserRole
+  is_tbm: boolean
+  specialization: string | null
   student_code: string | null
   lecturer_code: string | null
   department: string | null
@@ -60,6 +62,8 @@ export function useAuthUser() {
         full_name: profile.full_name,
         avatar_url: profile.avatar_url,
         role: profile.role as UserRole,
+        is_tbm: !!profile.is_tbm,
+        specialization: profile.specialization,
         student_code: profile.student_code,
         lecturer_code: profile.lecturer_code,
         department: profile.department,

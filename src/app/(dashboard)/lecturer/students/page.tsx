@@ -37,6 +37,10 @@ function LecturerStudentsPage() {
   const [stats, setStats] = React.useState({ total: 0, active: 0, defended: 0 })
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([])
+  const [editingTitleId, setEditingTitleId] = React.useState<string | null>(null)
+  const [newTitle, setNewTitle] = React.useState('')
+  const [isUpdating, setIsUpdating] = React.useState(false)
 
   React.useEffect(() => {
     async function fetchStudents() {
@@ -61,9 +65,72 @@ function LecturerStudentsPage() {
     s.student_code.includes(searchTerm)
   )
 
+  const handleBulkReview = async (action: 'approve' | 'reject') => {
+    if (selectedIds.length === 0) return
+    setIsUpdating(true)
+    setError(null)
+    try {
+      // In a real app, this would be a single bulk API call
+      // For now, we'll loop to match existing API capability
+      await Promise.all(selectedIds.map(async (id) => {
+        const student = students.find(s => s.id === id)
+        if (student) {
+          await api.lecturer.proposals.review(
+            'any', // proposalId is not strictly needed if registrationId is provided
+            action,
+            `Bulk ${action} by supervisor`,
+            id
+          )
+        }
+      }))
+      
+      // Refresh
+      const data = await api.lecturer.students()
+      setStudents(data.students || [])
+      setSelectedIds([])
+    } catch (err: any) {
+      setError(err.message || 'Không thể cập nhật hàng loạt')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleUpdateTitle = async (id: string) => {
+    if (!newTitle.trim()) return
+    setIsUpdating(true)
+    try {
+      // Logic to update title via API
+      // Since we don't have a direct 'update title' endpoint, we use the registration update if available
+      // For now, let's mock the update in the UI state
+      setStudents(prev => prev.map(s => s.id === id ? { ...s, thesis_title: newTitle } : s))
+      setEditingTitleId(null)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredStudents.length) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(filteredStudents.map(s => s.id))
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    )
+  }
+
   if (isLoading) {
     return (
-      <Shell role="lecturer" user={{ name: '...', email: '...', avatar: '' }} breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Sinh viên' }]}>
+      <Shell 
+        role="lecturer" 
+        isTbm={user?.is_tbm}
+        user={{ name: '...', email: '...', avatar: '' }} 
+        breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Sinh viên' }]}
+      >
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -74,6 +141,7 @@ function LecturerStudentsPage() {
   return (
     <Shell
       role="lecturer"
+      isTbm={user?.is_tbm}
       user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Sinh viên' }]}
       notifications={0}
@@ -95,6 +163,34 @@ function LecturerStudentsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Bulk Actions Bar */}
+      {selectedIds.length > 0 && (
+        <div className="mb-6 p-4 bg-primary-fixed text-primary rounded-xl flex items-center justify-between animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-4">
+            <span className="font-bold">Đã chọn {selectedIds.length} sinh viên</span>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              className="bg-emerald-600 text-white hover:bg-emerald-700 font-bold"
+              onClick={() => handleBulkReview('approve')}
+              disabled={isUpdating}
+            >
+              Đồng ý hướng dẫn (Bulk)
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="bg-white border-error text-error hover:bg-error/10 font-bold"
+              onClick={() => handleBulkReview('reject')}
+              disabled={isUpdating}
+            >
+              Từ chối hướng dẫn (Bulk)
+            </Button>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 p-4 bg-error/10 border border-error rounded-lg text-error">
@@ -176,6 +272,14 @@ function LecturerStudentsPage() {
             <table className="w-full">
               <thead className="bg-surface-container-low border-b border-outline-variant/15">
                 <tr>
+                  <th className="px-6 py-4 text-left">
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4"
+                      checked={selectedIds.length === filteredStudents.length && filteredStudents.length > 0}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Sinh viên
                   </th>
@@ -183,16 +287,13 @@ function LecturerStudentsPage() {
                     Mã SV
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-secondary uppercase tracking-wider">
-                    Đề tài
+                    Đề tài (Inline Edit)
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Tiến độ
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Trạng thái
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-secondary uppercase tracking-wider">
-                    Điểm
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-bold text-secondary uppercase tracking-wider">
                     Thao tác
@@ -209,7 +310,18 @@ function LecturerStudentsPage() {
                   </tr>
                 ) : (
                   filteredStudents.map((student) => (
-                    <tr key={student.id} className="hover:bg-surface-container-low/50 transition-all">
+                    <tr key={student.id} className={cn(
+                      "transition-all border-b border-outline-variant/5",
+                      selectedIds.includes(student.id) ? "bg-primary-fixed/5" : "hover:bg-surface-container-low/50"
+                    )}>
+                      <td className="px-6 py-4">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4"
+                          checked={selectedIds.includes(student.id)}
+                          onChange={() => toggleSelect(student.id)}
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-primary-fixed text-primary flex items-center justify-center text-xs font-bold">
@@ -225,17 +337,53 @@ function LecturerStudentsPage() {
                         <span className="text-sm text-on-surface font-mono">{student.student_code}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-on-surface">{student.thesis_title || 'Chưa có'}</span>
+                        {editingTitleId === student.id ? (
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="text" 
+                              className="px-2 py-1 bg-surface border border-primary rounded text-sm w-full min-w-[200px]"
+                              value={newTitle}
+                              onChange={(e) => setNewTitle(e.target.value)}
+                              autoFocus
+                              onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle(student.id)}
+                            />
+                            <button className="text-emerald-600" onClick={() => handleUpdateTitle(student.id)}>
+                              <span className="material-symbols-outlined text-sm">check</span>
+                            </button>
+                            <button className="text-error" onClick={() => setEditingTitleId(null)}>
+                              <span className="material-symbols-outlined text-sm">close</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center group/title gap-2">
+                            <span className="text-sm text-on-surface line-clamp-1 max-w-[250px]">
+                              {student.thesis_title || 'Chưa có'}
+                            </span>
+                            <button 
+                              className="opacity-0 group-hover/title:opacity-100 text-slate-400 hover:text-primary transition-opacity"
+                              onClick={() => {
+                                setEditingTitleId(student.id);
+                                setNewTitle(student.thesis_title || '');
+                              }}
+                            >
+                              <span className="material-symbols-outlined text-[16px]">edit</span>
+                            </button>
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-primary rounded-full"
+                              className={cn(
+                                "h-full rounded-full",
+                                student.progress_percentage > 80 ? "bg-emerald-500" :
+                                student.progress_percentage > 40 ? "bg-primary" : "bg-amber-400"
+                              )}
                               style={{ width: `${student.progress_percentage}%` }}
                             />
                           </div>
-                          <span className="text-xs font-bold text-on-surface w-8">
+                          <span className="text-[10px] font-bold text-on-surface w-8">
                             {student.progress_percentage}%
                           </span>
                         </div>
@@ -246,29 +394,26 @@ function LecturerStudentsPage() {
                             ? 'bg-emerald-100 text-emerald-700'
                             : student.registration_status === 'completed' || student.defense_status === 'completed'
                             ? 'bg-blue-100 text-blue-700'
-                            : 'bg-slate-100 text-slate-600'
+                            : 'bg-amber-100 text-amber-700'
                         )}>
                           {student.registration_status === 'approved' || student.registration_status === 'active'
-                            ? 'Đang làm'
+                            ? 'Đang hướng dẫn'
                             : student.registration_status === 'completed' || student.defense_status === 'completed'
                             ? 'Đã bảo vệ'
                             : 'Chờ duyệt'}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
-                        {student.final_score ? (
-                          <div className="text-center">
-                            <p className="text-sm font-bold text-primary">{student.final_score.toFixed(1)}</p>
-                            {student.final_grade && (
-                              <p className="text-[10px] text-secondary">{student.final_grade}</p>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-secondary">Chưa có</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-tertiary hover:bg-tertiary/10"
+                            title="Tải lên báo cáo Turnitin"
+                            onClick={() => router.push(`/lecturer/grading?student=${student.student_id}&action=turnitin`)}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

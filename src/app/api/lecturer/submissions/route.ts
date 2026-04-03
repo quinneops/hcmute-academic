@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     const { data: registrations } = await supabaseAdmin
       .from('registrations')
       .select('*')
-      .eq('proposal_supervisor_id', userId)
+      .or(`proposal_supervisor_id.eq.${userId},reviewer_id.eq.${userId}`)
 
     // Extract submissions from embedded data
     const pendingSubmissions: any[] = []
@@ -74,6 +74,8 @@ export async function GET(request: NextRequest) {
           has_grade: !!hasGrade,
           grade_score: myGrade?.total_score,
           grade_feedback: myGrade?.feedback,
+          defense_time: reg.defense_session?.scheduled_time || null,
+          defense_room: reg.defense_session?.room || null,
         }
 
         if (hasGrade) {

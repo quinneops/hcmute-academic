@@ -109,7 +109,7 @@ export default function StudentDashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
         <div>
           <h2 className="text-4xl font-headline font-extrabold text-primary tracking-tight mb-2">
-            Tổng quan Khóa luận
+            Tổng quan {stats?.latestRegistrationType === 'BCTT' ? 'Thực tập (BCTT)' : 'Khóa luận (KLTN)'}
           </h2>
           <p className="text-on-surface-variant font-medium">
             Năm học 2024-2025 • Học kỳ 2
@@ -206,9 +206,22 @@ export default function StudentDashboardPage() {
                 <span className="px-3 py-1 bg-primary-fixed text-primary text-[10px] font-bold rounded uppercase tracking-wider">
                   HK2 2024-2025
                 </span>
+                {stats?.latestRegistrationType && (
+                  <span className={cn(
+                    "px-3 py-1 text-[10px] font-bold rounded uppercase tracking-wider",
+                    stats.latestRegistrationType === 'BCTT' ? "bg-blue-100 text-blue-700" : "bg-primary-fixed/20 text-primary"
+                  )}>
+                    Loại: {stats.latestRegistrationType}
+                  </span>
+                )}
                 {stats?.latestRegistrationStatus === 'approved' && (
                   <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase tracking-wider flex items-center gap-1">
                     <span className="material-symbols-outlined text-[12px]">lock</span> ĐÃ DUYỆT
+                  </span>
+                )}
+                {stats?.latestRegistrationStatus === 'completed' && (
+                  <span className="px-3 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold rounded uppercase tracking-wider flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px]">verified</span> BẢO VỆ THÀNH CÔNG
                   </span>
                 )}
               </div>
@@ -310,9 +323,9 @@ export default function StudentDashboardPage() {
           {/* Thesis Progress Flow */}
           <Card className="bg-white p-8 rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 mb-8">
             <div className="flex justify-between items-center mb-10">
-              <h3 className="text-lg font-headline font-bold text-primary">Lộ trình Khóa luận</h3>
+              <h3 className="text-lg font-headline font-bold text-primary">Lộ trình {stats?.latestRegistrationType || 'Khóa luận'}</h3>
               <span className="px-3 py-1 bg-primary-fixed text-primary text-[11px] font-bold rounded-full uppercase tracking-widest">
-                GIAI ĐOẠN HIỆN TẠI: NỘP TÀI LIỆU
+                GIAI ĐOẠN HIỆN TẠI: {thesisProgress.find(s => !s.completed)?.milestone.toUpperCase() || 'HOÀN THÀNH'}
               </span>
             </div>
             <div className="relative flex justify-between">

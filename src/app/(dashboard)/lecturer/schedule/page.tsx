@@ -179,6 +179,7 @@ function LecturerSchedulePage() {
   return (
     <Shell
       role="lecturer"
+      isTbm={user?.is_tbm}
       user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Lịch hẹn' }]}
       notifications={0}

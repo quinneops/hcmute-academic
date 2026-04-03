@@ -1,0 +1,42 @@
+﻿Yêu cầu sản phẩm: 
+* Public link cho mọi người có thể sử dụng
+* Add sẵn data của GV, SV được cung cấp trong sheet Data của link này trước khi lên trình bày: https://docs.google.com/spreadsheets/d/1ON6evA-pkI9201eQ1R5o6bvMmZrO-7VQvwmr1HaSDPs/edit?gid=0#gid=0
+Role: SV
+-        Đăng nhập
+- Có các menu: Thông tin chung, Đăng ký đề tài, Theo dõi trạng thái.
+-        SV tiến hành đăng ký BCTT (kiểm tra trạng thái nếu mới thì phải đăng ký BCCT, xong BCTT mới đăng ký KLTN) => Ghi nhận các thông tin về đề tài, lĩnh vực, GV, đợt. Optional: Khi SV chọn lĩnh vực thì sort list GV có chuyên môn về lĩnh vực đó.
+- SV thấy được trạng thái của quá trình đăng ký, thực hiện BCTT.
+- Khi đến hạn nộp BCTT => upload bài BCTT (pdf), upload Phiếu xác nhận thực tập của công ty (pdf)
+- SV pass BCTT thì vào đăng ký sau thì được đăng ký KLTN
+-        SV tiến hành đăng ký KLTN (kiểm tra trạng thái nếu đã xong BCCT mới đăng ký KLTN) => Ghi nhận các thông tin về đề tài, lĩnh vực, GV, đợt. Optional: GV HD mặc định là GV HD đợt BCTT.
+- SV thấy được trạng thái của quá trình đăng ký, thực hiện KLTN (hạn nộp, trạng thái chấm điểm của GVHD, GVPB, Thông tin ngày-địa điểm của Hội đồng, Điểm average sau khi bảo vệ, Biên bản hội đồng, GV HD - Chủ tịch hội đồng đồng ý chỉnh sửa  (sau khi bảo vệ)
+- Khi đến hạn nộp KLTN => upload bài KLTN (pdf)
+- Sau khi bảo vệ => upload bài KLTN đã chỉnh sửa theo góp ý của hội đồng (pdf)
+________________
+
+
+Role: GV:
+-        Đăng nhập
+-    Có các menu: Thông tin chung, Hướng dẫn, Phản biện, Hội đồng, Chủ tịch, Thư ký, Gợi ý đề tài
+-        Xem, Có thể chỉnh sửa tên đề tài =>  Đồng ý / Không đồng ý Hướng dẫn. GV có thể Đồng ý / Không đồng ý 1 lúc nhiều SV.
+-   Đến hạn nộp KLTN thì sau khi SV upload file bài làm thì GV upload file Turnitin, nhập điểm cho SV. => Xem và thấy được danh sách SV HD: Có link xem bài SV, chỗ upload Turnitin, form chấm điểm, lưu điểm cho SV.
+-        Xem và thấy được danh sách SV Phản biện: link xem bài SV, link xem Turnitin, form chấm điểm, Có nơi (ô text) để GV nhập các nhận xét và các câu hỏi, lưu điểm cho SV
+-        Xem và thấy được danh sách SV Hội đồng: link xem bài SV,link xem Turnitin, form chấm điểm, lưu điểm cho SV.
+- Đối với GV có vai trò Chủ tịch thì có: Danh sách sv theo hội đồng (xem được file bài làm của SV, file Turnitin, file Biên bản hội đồng (của từng SV), trạng thái duyệt của GV HD đồng ý chỉnh sửa  (sau khi bảo vệ) => Duyệt chỉnh sửa (Yes/No) sau khi GVHD đã duyệt.
+- Đối với GV có vai trò Thư ký thì có: Danh sách sv theo hội đồng, hiển thị điểm số của các thành viên (HD, PB, Chủ tịch, Thành viên….) và điểm final, có thể mở Biên bản hội đồng cho từng SV (đã được hệ thống điền sẵn: Họ tên, MSSV, Tên đề tài, các góp ý của GV Phản biện, và nhập thêm các góp ý của Hội đồng. 
+Với vai trò TBM có thêm:
+* Hiển thị danh sách GV có thể hướng dẫn của từng đợt, quota cho từng GV => Duyệt để chính thức mở slot cho SV có thể đăng ký.
+-       Hiển thị danh sách SV, tên đề tài, đợt, loại, GV Hướng dẫn => phân công được phản biện.
+- Hiển thị danh sách GV hướng dẫn, GV Phản biện => phân công Hội đồng cho GV.
+-         Hiển thị danh sách SV, tên đề tài, đợt, loại, GV Hướng dẫn => phân công Hội đồng cho SV
+-   Trang thống kê: Điểm toàn bộ sinh viên theo từng đợt, trạng thái đồng ý / Không đồng ý của GV HD - Chủ tịch Hội đồng đối với bài chỉnh sửa sau khi bảo vệ.
+
+
+Sau khi bảo vệ
+-        GVHD: Xem và thấy được danh sách SV HD: link xem Biên bản hội đồng, link xem bài chỉnh sửa của SV, Biên bản giải trình các chỉnh sửa => Đồng ý chỉnh sửa / Không. GVHD phải đồng ý trước rồi Chủ tịch hội đồng mới được duyệt.
+-        Chủ tịch hội đồng: Xem và thấy được danh sách SV HD: link xem Biên bản hội đồng, link xem bài chỉnh sửa của SV, Biên bản giải trình các chỉnh sửa => Đồng ý chỉnh sửa / Không sau khi GVHD đồng ý.
+-        TBM: xem danh sách SV, tên đề tài, đợt, loại, GV Hướng dẫn (pass/no) => phân công được Hội đồng.
+-        TBM: xem danh sách SV, cập nhật GVHD, Chủ tịch Hội đồng đồng ý các chỉnh sửa
+ 
+
+SV đăng nhập => đăng ký BCTT => trừ slot của GV => Gửi thông tin đến GV HD => GV duyệt hàng loạt

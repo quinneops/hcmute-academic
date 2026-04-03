@@ -135,6 +135,7 @@ function LecturerProfilePage() {
   return (
     <Shell
       role="lecturer"
+      isTbm={authUser?.is_tbm}
       user={user}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Hồ sơ' }]}
       notifications={0}

@@ -22,11 +22,14 @@ interface Proposal {
   student_id: string
   registration_id: string
   registration_status: string
+  type: 'BCTT' | 'KLTN'
   submitted_at: string
   reviewed_at: string | null
   review_notes: string | null
   motivation_letter: string | null
   proposed_title: string | null
+  auto_approve?: boolean
+  created_by?: string | null
 }
 
 function LecturerProposalsPage() {
@@ -39,6 +42,27 @@ function LecturerProposalsPage() {
   const [isUpdating, setIsUpdating] = React.useState(false)
   const [reviewNotes, setReviewNotes] = React.useState('')
   const [showReviewForm, setShowReviewForm] = React.useState(false)
+  const [aiScreeningResult, setAiScreeningResult] = React.useState<any>(null)
+
+  React.useEffect(() => {
+    setAiScreeningResult(null)
+    setReviewNotes('')
+    setShowReviewForm(false)
+  }, [selectedProposal])
+
+  const handleAI_Screening = async () => {
+    if (!selectedProposal?.registration_id) return
+    setIsUpdating(true)
+    setError(null)
+    try {
+      const res = await api.ai.screenRegistration(selectedProposal.registration_id)
+      setAiScreeningResult(res)
+    } catch (err: any) {
+      setError(err.message || 'Lỗi khi AI đánh giá')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   const fetchProposals = React.useCallback(async () => {
     try {
@@ -88,7 +112,12 @@ function LecturerProposalsPage() {
 
   if (isLoading) {
     return (
-      <Shell role="lecturer" user={{ name: '...', email: '...', avatar: '' }} breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Đề cương' }]}>
+      <Shell 
+        role="lecturer" 
+        isTbm={user?.is_tbm}
+        user={{ name: '...', email: '...', avatar: '' }} 
+        breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Đề cương' }]}
+      >
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -99,6 +128,7 @@ function LecturerProposalsPage() {
   return (
     <Shell
       role="lecturer"
+      isTbm={user?.is_tbm}
       user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Đề cương' }]}
       notifications={0}
@@ -121,6 +151,31 @@ function LecturerProposalsPage() {
             <span className="material-symbols-outlined text-sm mr-2">add</span>
             Tạo đề cương
           </Button>
+          {proposals.some(p => p.registration_status === 'pending') && (
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              onClick={async () => {
+                const pending = proposals.filter(p => p.registration_status === 'pending');
+                if (window.confirm(`Bạn có chắc chắn muốn duyệt tất cả ${pending.length} đề cương đang chờ?`)) {
+                  setIsUpdating(true);
+                  try {
+                    for (const p of pending) {
+                      await api.lecturer.proposals.review(p.id, 'approve', 'Đã duyệt hàng loạt', p.registration_id);
+                    }
+                    await fetchProposals();
+                  } catch (err: any) {
+                    setError(err.message || 'Lỗi khi duyệt hàng loạt');
+                  } finally {
+                    setIsUpdating(false);
+                  }
+                }
+              }}
+              disabled={isUpdating}
+            >
+              <span className="material-symbols-outlined text-sm mr-2">done_all</span>
+              Duyệt tất cả
+            </Button>
+          )}
           <Badge className="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">
             {stats.pending} Chờ duyệt
           </Badge>
@@ -165,7 +220,12 @@ function LecturerProposalsPage() {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <p className="text-xs font-bold text-on-surface">{proposal.student_name || 'Chưa có sinh viên'}</p>
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs font-bold text-on-surface">{proposal.student_name || 'Chưa có sinh viên'}</p>
+                          {proposal.created_by && (
+                            <span className="material-symbols-outlined text-[12px] text-amber-600" title="Sinh viên tự đề xuất">campaign</span>
+                          )}
+                        </div>
                         <p className="text-[10px] text-secondary">{proposal.student_code}</p>
                       </div>
                       <Badge className={cn(
@@ -176,7 +236,15 @@ function LecturerProposalsPage() {
                         {proposal.status === 'approved' ? '✓' : proposal.status === 'rejected' ? '✗' : '⏳'}
                       </Badge>
                     </div>
-                    <p className="text-xs text-on-surface-variant line-clamp-2">{proposal.title}</p>
+                    <div className="flex justify-between items-center mt-2">
+                      <p className="text-xs text-on-surface-variant line-clamp-1 flex-1">{proposal.title}</p>
+                      <Badge className={cn(
+                        "ml-2 text-[8px] px-1.5 py-0 min-w-fit",
+                        proposal.type === 'BCTT' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
+                      )}>
+                        {proposal.type}
+                      </Badge>
+                    </div>
                     <p className="text-[10px] text-secondary mt-1">{formatDate(proposal.submitted_at)}</p>
                   </button>
                 ))
@@ -204,6 +272,17 @@ function LecturerProposalsPage() {
                         {selectedProposal.title}
                       </CardTitle>
                       <Badge className={cn(
+                        selectedProposal.type === 'BCTT' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                      )}>
+                        {selectedProposal.type}
+                      </Badge>
+                      {selectedProposal.created_by && (
+                        <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
+                          <span className="material-symbols-outlined text-[10px] mr-1">campaign</span>
+                          SV tự đề xuất
+                        </Badge>
+                      )}
+                      <Badge className={cn(
                         selectedProposal.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
                         selectedProposal.status === 'rejected' ? 'bg-red-100 text-red-700' :
                         'bg-amber-100 text-amber-700'
@@ -214,6 +293,39 @@ function LecturerProposalsPage() {
                     <p className="text-sm text-secondary">
                       {selectedProposal.student_name || 'Chưa có sinh viên'} ({selectedProposal.student_code}) • Nộp: {formatDate(selectedProposal.submitted_at)}
                     </p>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2 bg-primary-container/20 text-primary hover:bg-primary-container/40 border-primary/20"
+                      onClick={() => {
+                        window.location.href = `/lecturer/ai-assistant?contextType=proposal&contextId=${selectedProposal.id}&contextTitle=${encodeURIComponent(selectedProposal.title)}`;
+                      }}
+                    >
+                      <span className="material-symbols-outlined text-sm">smart_toy</span>
+                      Hỏi AI
+                    </Button>
+                    <label className="flex items-center gap-2 text-sm text-secondary font-bold cursor-pointer border border-outline-variant/30 px-3 py-2 rounded-lg bg-surface-container-lowest hover:bg-surface-bright transition-colors select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedProposal.auto_approve ?? false}
+                        onChange={async (e) => {
+                          const val = e.target.checked
+                          try {
+                            setIsUpdating(true)
+                            await api.lecturer.proposals.update(selectedProposal.id, { auto_approve: val })
+                            await fetchProposals() // Refresh to reflect change
+                          } catch (err: any) {
+                             setError(err.message || 'Lỗi khi cập nhật tự động duyệt')
+                          } finally {
+                             setIsUpdating(false)
+                          }
+                        }}
+                        className="w-4 h-4 rounded text-primary focus:ring-primary border-slate-300"
+                        disabled={isUpdating}
+                      />
+                      Duyệt Tự Động
+                    </label>
                   </div>
                 </div>
               </CardHeader>
@@ -260,9 +372,49 @@ function LecturerProposalsPage() {
                   </div>
                 )}
 
-                {/* Review Form */}
+                {/* Review Form & AI Screening */}
                 {(selectedProposal.registration_status === 'pending' || selectedProposal.status === 'pending') && (
-                  <>
+                  <div className="space-y-6 pt-4 border-t border-outline-variant/15">
+                    {/* AI Screening Section */}
+                    {selectedProposal.registration_id && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-bold text-secondary uppercase tracking-widest flex items-center gap-2">
+                            <span className="material-symbols-outlined text-purple-600">psychology</span>
+                            AI Đánh Giá Sự Phù Hợp
+                          </h4>
+                          <Button variant="outline" size="sm" onClick={handleAI_Screening} disabled={isUpdating} className="text-purple-700 border-purple-200 hover:bg-purple-50">
+                            {isUpdating && !showReviewForm && !aiScreeningResult ? (
+                              <div className="w-3 h-3 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mr-2" />
+                            ) : (
+                              <span className="material-symbols-outlined text-sm mr-2">analytics</span>
+                            )}
+                            Đánh giá ngay
+                          </Button>
+                        </div>
+                        
+                        {aiScreeningResult && (
+                          <div className="p-4 bg-purple-50 rounded-lg border border-purple-200 animate-in fade-in duration-300">
+                            <div className="flex items-center justify-between mb-3">
+                               <span className="font-bold text-purple-900 flex items-center gap-2">
+                                 Điểm phù hợp: 
+                                 <span className="text-2xl">{aiScreeningResult.score}</span>/100
+                               </span>
+                               <Badge className={
+                                 aiScreeningResult.recommendation === 'approve' ? 'bg-emerald-100 text-emerald-700' :
+                                 aiScreeningResult.recommendation === 'reject' ? 'bg-error-container text-error' :
+                                 'bg-amber-100 text-amber-700'
+                               }>
+                                 {aiScreeningResult.recommendation === 'approve' ? 'Khuyên duyệt' :
+                                  aiScreeningResult.recommendation === 'reject' ? 'Khuyên từ chối' : 'Cần phỏng vấn'}
+                               </Badge>
+                            </div>
+                            <p className="text-sm text-purple-800 leading-relaxed font-medium">{aiScreeningResult.summary}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     {showReviewForm ? (
                       <div className="space-y-4">
                         <div>
@@ -313,7 +465,7 @@ function LecturerProposalsPage() {
                         </Button>
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
 
                 {/* Approved Status */}

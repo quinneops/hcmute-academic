@@ -165,6 +165,14 @@ export default function RegistrationPage() {
                       )}>
                         {getStatusLabel(reg.status)}
                       </Badge>
+                      <Badge variant="outline" className={cn(
+                        "text-[10px] font-bold uppercase ml-2",
+                        reg.proposal_type === 'BCTT' 
+                          ? "border-blue-200 text-blue-700 bg-blue-50"
+                          : "border-primary-fixed text-primary bg-primary-fixed/10"
+                      )}>
+                        {reg.proposal_type}
+                      </Badge>
                     </div>
                     <CardTitle className="font-headline font-bold text-primary text-xl">
                       {reg.proposal_title}
@@ -282,6 +290,14 @@ export default function RegistrationPage() {
                     'bg-slate-100 text-slate-600'
                   )}>
                     {getStatusLabel(selectedRegistration.status)}
+                  </Badge>
+                  <Badge variant="outline" className={cn(
+                    "mb-2 ml-2 text-[10px] font-bold uppercase",
+                    selectedRegistration.proposal_type === 'BCTT' 
+                      ? "border-blue-200 text-blue-700 bg-blue-50"
+                      : "border-primary-fixed text-primary bg-primary-fixed/10"
+                  )}>
+                    {selectedRegistration.proposal_type}
                   </Badge>
                   <CardTitle className="font-headline font-bold text-primary text-xl">
                     {selectedRegistration.proposal_title}

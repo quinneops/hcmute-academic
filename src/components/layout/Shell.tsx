@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 
 interface ShellProps {
   role: 'student' | 'lecturer' | 'admin'
+  isTbm?: boolean
   user?: {
     name: string
     email: string
@@ -35,6 +36,7 @@ interface ShellProps {
  */
 export function Shell({
   role,
+  isTbm,
   user,
   pageTitle,
   breadcrumb = [],
@@ -48,6 +50,7 @@ export function Shell({
       {/* Side Navigation */}
       <SideNavBar
         role={role}
+        isTbm={isTbm}
         userName={user?.name}
         userAvatar={user?.avatar}
       />

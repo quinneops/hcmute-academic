@@ -123,7 +123,12 @@ function LecturerDashboardPage() {
 
   if (isLoading) {
     return (
-      <Shell role="lecturer" user={{ name: '...', email: '...', avatar: '' }} breadcrumb={[{ label: 'Bảng điều khiển' }]}>
+      <Shell 
+        role="lecturer" 
+        isTbm={user?.is_tbm} 
+        user={{ name: '...', email: '...', avatar: '' }} 
+        breadcrumb={[{ label: 'Bảng điều khiển' }]}
+      >
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -134,6 +139,7 @@ function LecturerDashboardPage() {
   return (
     <Shell
       role="lecturer"
+      isTbm={user?.is_tbm}
       user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
       breadcrumb={[{ label: 'Bảng điều khiển' }]}
       notifications={0}
@@ -241,6 +247,48 @@ function LecturerDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* TBM Module Quick Stats */}
+      {user?.is_tbm && (
+        <div className="mb-8 p-6 bg-primary-fixed/10 rounded-2xl border border-primary-fixed/20">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-primary text-white rounded-lg">
+              <span className="material-symbols-outlined">analytics</span>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold font-headline text-primary">Tổng quan Bộ môn</h3>
+              <p className="text-xs text-secondary">Dành riêng cho Trưởng bộ môn</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white/50 p-4 rounded-xl border border-white">
+              <p className="text-[10px] font-bold text-secondary uppercase mb-1">Chỉ tiêu còn lại</p>
+              <p className="text-xl font-black text-on-surface">24 / 120</p>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                <div className="h-full bg-primary w-[20%]" />
+              </div>
+            </div>
+            <div className="bg-white/50 p-4 rounded-xl border border-white">
+              <p className="text-[10px] font-bold text-secondary uppercase mb-1">SV chưa có HĐ</p>
+              <p className="text-xl font-black text-on-surface">15</p>
+              <div className="mt-2">
+                <Button variant="link" className="p-0 h-auto text-xs text-primary" onClick={() => router.push('/lecturer/tbm/assign-councils')}>
+                  Phân công ngay
+                </Button>
+              </div>
+            </div>
+            <div className="bg-white/50 p-4 rounded-xl border border-white">
+              <p className="text-[10px] font-bold text-secondary uppercase mb-1">KLTN đã hoàn thành</p>
+              <p className="text-xl font-black text-on-surface">82%</p>
+              <div className="mt-2">
+                <Button variant="link" className="p-0 h-auto text-xs text-emerald-600" onClick={() => router.push('/lecturer/tbm/stats')}>
+                  Xem báo cáo chi tiết
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -13,6 +13,7 @@ export interface DashboardStats {
   unreadNotifications: number
   latestRegistrationStatus: string | null
   latestRegistrationTitle: string | null
+  latestRegistrationType: 'BCTT' | 'KLTN' | null
 }
 
 export interface ThesisProgress {
@@ -79,7 +80,10 @@ export function useStudentDashboard(studentId: string) {
 
       console.log('[Dashboard] Dashboard data:', data)
 
-      setStats(data.stats || null)
+      setStats(data.stats ? {
+        ...data.stats,
+        latestRegistrationType: data.latestRegistration?.type || data.latestRegistration?.proposal?.type || null
+      } : null)
 
       // Process thesis progress
       const milestones = ['Proposal', 'Draft', 'Interim', 'Final', 'Slide', 'Defense']
