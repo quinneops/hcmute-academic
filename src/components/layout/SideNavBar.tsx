@@ -46,6 +46,7 @@ const lecturerNavItems: NavItem[] = [
   { icon: 'edit_note', label: 'Thư ký', href: '/lecturer/secretary' },
   { icon: 'assignment', label: 'Gợi ý đề tài', href: '/lecturer/proposals' },
   { icon: 'grading', label: 'Chấm điểm', href: '/lecturer/grading' },
+  { icon: 'smart_toy', label: 'Trợ lý AI', href: '/lecturer/ai-assistant' },
   // { icon: 'event', label: 'Lịch bảo vệ', href: '/lecturer/schedule' },
   { icon: 'forum', label: 'Phản hồi', href: '/lecturer/feedback' },
 ];
@@ -57,12 +58,6 @@ const tbmNavItems: NavItem[] = [
   { icon: 'analytics', label: 'Thống kê', href: '/lecturer/tbm/stats' },
 ];
 
-const tbmNavItems: NavItem[] = [
-  { icon: 'fact_check', label: 'Duyệt slot', href: '/lecturer/tbm/slots' },
-  { icon: 'person_add', label: 'Phân công PB', href: '/lecturer/tbm/assign-reviewers' },
-  { icon: 'groups_3', label: 'Phân công HĐ', href: '/lecturer/tbm/assign-councils' },
-  { icon: 'analytics', label: 'Thống kê', href: '/lecturer/tbm/stats' },
-]
 
 const adminNavItems: NavItem[] = [
   { icon: 'dashboard', label: 'Bảng điều khiển', href: '/admin' },
@@ -73,14 +68,25 @@ const adminNavItems: NavItem[] = [
   { icon: 'assessment', label: 'Báo cáo', href: '/admin/reports' },
 ]
 
-export function SideNavBar({ role, isTbm, userName, userAvatar, onLogout }: SideNavBarProps) {
+export function SideNavBar({
+  role,
+  isTbm,
+  userName,
+  userAvatar,
+  is_tbm,
+  is_secretary,
+  onLogout,
+  mobile = false,
+  isOpen = false,
+  onClose,
+}: SideNavBarProps) {
   const pathname = usePathname()
 
   let navItems = role === 'student'
     ? studentNavItems
     : role === 'lecturer'
-    ? lecturerNavItems
-    : adminNavItems
+      ? lecturerNavItems
+      : adminNavItems
 
   return (
     <aside
