@@ -153,8 +153,8 @@ export async function sendAppointmentNotification(
       return { success: false, error: error.message }
     }
 
-    // Send Email Notification (Async)
-    notifyStudentByEmail(data, template)
+    // Send Email Notification (Sync/Awaiting but ignoring errors internally)
+    await notifyStudentByEmail(data, template)
 
     return { success: true }
   } catch (error: any) {

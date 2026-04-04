@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Send Email Notifications to members (Async)
-      notifyCouncilMembers(memberData, newCouncil.name, scheduled_at, room)
+      await notifyCouncilMembers(memberData, newCouncil.name, scheduled_at, room)
     }
 
     return NextResponse.json(newCouncil, { status: 201 })

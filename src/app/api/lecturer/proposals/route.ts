@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Send Email Notifications (Async)
-        notifyStudentsOfReview(proposal_id, newStatus, review_notes)
+        await notifyStudentsOfReview(proposal_id, newStatus, review_notes)
       }
 
       return NextResponse.json({

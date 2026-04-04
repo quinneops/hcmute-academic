@@ -294,8 +294,8 @@ export async function PATCH(
       console.log(`[Review] Updated ${updatedRegs?.length || 0} pending registration(s)`)
     }
 
-    // Send Email Notifications (Async)
-    notifyStudentsOfReview(proposalId, registration_id, newStatus, review_notes)
+    // Send Email Notifications (Sync and ignore errors)
+    await notifyStudentsOfReview(proposalId, registration_id, newStatus, review_notes)
 
     // Sync denormalized data in proposals table
     const { data: allRegistrations } = await supabaseAdmin

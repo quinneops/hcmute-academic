@@ -288,6 +288,16 @@ export async function POST(request: Request) {
       .update(updatePayload)
       .eq('id', proposal_id)
 
+    // Send Email Notification to Supervisor (Async)
+    await notifySupervisor(
+      proposal.supervisor_name || '',
+      proposal.supervisor_email || '',
+      studentProfile?.full_name || '',
+      studentProfile?.student_code || '',
+      proposal.title,
+      proposal.type || ''
+    )
+
     return NextResponse.json(registration, { status: 201 })
   } catch (error: any) {
     console.error('API registrations POST error:', error)

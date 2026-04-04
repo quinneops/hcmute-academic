@@ -130,8 +130,8 @@ export async function POST(request: NextRequest) {
     // We don't want to block the response for emails
     const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/student/registrations`
     
-    // Fire and forget email sending
-    Promise.all(pendingRegistrations.map(async (reg) => {
+    // Fire and forget email sending - actually we await it to ensure it completes in serverless
+    await Promise.all(pendingRegistrations.map(async (reg) => {
       if (!reg.student_email) return
 
       try {
