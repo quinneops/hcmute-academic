@@ -186,10 +186,15 @@ export const api = {
         request<any>(`/lecturer/proposals/${id}`),
       create: (data: any) =>
         request<any>(`/lecturer/proposals`, { method: 'POST', body: data }),
-      review: (proposalId: string, action: 'approve' | 'reject', reviewNotes?: string, registrationId?: string) =>
-        request<any>(`/lecturer/proposals/${proposalId}`, {
+      review: (proposal_id: string, action: 'approve' | 'reject', reviewNotes?: string, registrationId?: string) =>
+        request<any>(`/lecturer/proposals/${proposal_id}`, {
           method: 'PATCH',
           body: { action, review_notes: reviewNotes, registration_id: registrationId },
+        }),
+      bulkReview: (action: 'approve') =>
+        request<any>(`/lecturer/proposals/bulk-review`, {
+          method: 'POST',
+          body: { action },
         }),
       delete: (id: string) =>
         request<any>(`/lecturer/proposals/${id}`, { method: 'DELETE' }),

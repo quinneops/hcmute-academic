@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
+import { StudentPageIntro } from '@/components/student/StudentPageIntro'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -90,57 +91,29 @@ export default function NotificationsPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/student' }, { label: 'Thông báo' }]}
       notifications={unreadCount}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Thông Báo
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Cập nhật các thông báo quan trọng từ hệ thống
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {unreadCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={markAllAsRead}
-              className="border-primary-fixed text-primary"
-            >
-              <span className="material-symbols-outlined text-sm mr-1">done_all</span>
-              Đánh dấu tất cả đã đọc
-            </Button>
-          )}
-          <Button
-            variant={filter === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter('all')}
-            className={filter === 'all' ? 'bg-primary' : 'border-primary-fixed text-primary'}
-          >
-            Tất cả
-          </Button>
-          <Button
-            variant={filter === 'unread' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter('unread')}
-            className={filter === 'unread' ? 'bg-primary' : 'border-primary-fixed text-primary'}
-          >
-            Chưa đọc
-            <Badge className="ml-2 bg-amber-100 text-amber-700 text-[10px]">
-              {unreadCount}
-            </Badge>
-          </Button>
-          <Button
-            variant={filter === 'read' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter('read')}
-            className={filter === 'read' ? 'bg-primary' : 'border-primary-fixed text-primary'}
-          >
-            Đã đọc
-          </Button>
-        </div>
-      </div>
+      <StudentPageIntro
+        eyebrow="Notifications"
+        title="Thông báo"
+        description="Theo dõi các cập nhật quan trọng từ hệ thống, nhắc hạn nộp và phản hồi mới trong một giao diện dễ quét hơn."
+        meta={
+          unreadCount > 0 ? (
+            <Badge className="bg-amber-100 text-amber-700 text-[10px]">{unreadCount} chưa đọc</Badge>
+          ) : null
+        }
+        actions={
+          <>
+            {unreadCount > 0 && (
+              <Button variant="outline" size="sm" onClick={markAllAsRead} className="bg-white/80 border-outline-variant/40">
+                <span className="material-symbols-outlined text-sm mr-1">done_all</span>
+                Đánh dấu tất cả đã đọc
+              </Button>
+            )}
+            <Button variant={filter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('all')}>Tất cả</Button>
+            <Button variant={filter === 'unread' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('unread')}>Chưa đọc</Button>
+            <Button variant={filter === 'read' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('read')}>Đã đọc</Button>
+          </>
+        }
+      />
 
       {/* Notifications List */}
       <Card className="bg-surface-container-lowest shadow-ambient-lg border-none">
@@ -150,7 +123,7 @@ export default function NotificationsPage() {
               <div
                 key={notification.id}
                 className={cn(
-                  "p-6 hover:bg-surface-container-low/50 transition-all cursor-pointer",
+                  "p-4 sm:p-6 hover:bg-surface-container-low/50 transition-all cursor-pointer",
                   !notification.is_read && 'bg-primary-fixed/10'
                 )}
                 onClick={() => !notification.is_read && markAsRead(notification.id)}
@@ -165,7 +138,7 @@ export default function NotificationsPage() {
                     </span>
                   </div>
                   <div className="flex-1">
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between mb-2">
                       <h3 className={cn(
                         "text-sm font-bold",
                         !notification.is_read ? 'text-on-surface' : 'text-on-surface-variant'

@@ -2,6 +2,8 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
+import { StudentMetricGrid } from '@/components/student/StudentMetricGrid'
+import { StudentPageIntro } from '@/components/student/StudentPageIntro'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -130,97 +132,33 @@ export default function StudentDocumentsPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/student' }, { label: 'Tài liệu' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Tài Liệu Khóa Luận
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Biểu mẫu, hướng dẫn và tài liệu tham khảo
-          </p>
-        </div>
-        <Button
-          className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary"
-          onClick={() => setShowRequestDialog(true)}
-        >
-          <span className="material-symbols-outlined text-sm mr-2">add</span>
-          Đề xuất tài liệu
-        </Button>
-      </div>
+      <StudentPageIntro
+        eyebrow="Resources"
+        title="Tài liệu khóa luận"
+        description="Biểu mẫu, hướng dẫn và tài liệu tham khảo được gom lại trong một thư viện dễ quét và nhất quán hơn cho toàn bộ student flow."
+        actions={
+          <Button onClick={() => setShowRequestDialog(true)}>
+            <span className="material-symbols-outlined text-sm mr-2">add</span>
+            Đề xuất tài liệu
+          </Button>
+        }
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-surface-container-lowest border-l-4 border-primary shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-primary-fixed text-primary rounded-lg">
-                <span className="material-symbols-outlined text-xl">description</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {documents.length}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Tài liệu</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-blue-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">assignment</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {documents.filter(d => d.type === 'template').length}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Biểu mẫu</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-emerald-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">menu_book</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {documents.filter(d => d.type === 'guide').length}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Hướng dẫn</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-amber-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">download</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {documents.reduce((acc, doc) => acc + doc.download_count, 0)}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Lượt tải</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StudentMetricGrid
+        className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4"
+        items={[
+          { label: 'Tài liệu', value: `${documents.length}`, hint: 'Tổng tài nguyên hiện có.', accent: 'primary', icon: 'description' },
+          { label: 'Biểu mẫu', value: `${documents.filter(d => d.type === 'template').length}`, hint: 'Biểu mẫu cho đăng ký và nộp bài.', accent: 'violet', icon: 'assignment' },
+          { label: 'Hướng dẫn', value: `${documents.filter(d => d.type === 'guide').length}`, hint: 'Tài liệu định hướng thực hiện.', accent: 'emerald', icon: 'menu_book' },
+          { label: 'Lượt tải', value: `${documents.reduce((acc, doc) => acc + doc.download_count, 0)}`, hint: 'Mức độ sử dụng tài liệu.', accent: 'amber', icon: 'download' },
+        ]}
+      />
 
       {/* Filters */}
       <Card className="bg-surface-container-lowest shadow-ambient-lg border-none mb-6">
         <CardContent className="py-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
+            <div className="flex-1 relative min-w-0">
               <span className="material-symbols-outlined text-secondary absolute left-3 top-1/2 -translate-y-1/2">search</span>
               <input
                 type="text"
@@ -230,14 +168,14 @@ export default function StudentDocumentsPage() {
                 className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low rounded-lg border border-outline-variant/30 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
               {categories.map((cat) => (
                 <Button
                   key={cat.id}
                   variant={category === cat.id ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setCategory(cat.id)}
-                  className={category === cat.id ? 'bg-primary text-white' : 'border-slate-200 text-secondary'}
+                  className={cn("shrink-0", category === cat.id ? 'bg-primary text-white' : 'border-slate-200 text-secondary')}
                 >
                   {cat.label}
                 </Button>
@@ -248,7 +186,7 @@ export default function StudentDocumentsPage() {
       </Card>
 
       {/* Documents Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {filteredDocs.map((doc) => (
           <Card key={doc.id} className="bg-surface-container-lowest shadow-ambient-lg border-none hover:shadow-ambient-md transition-shadow">
             <CardContent className="p-6">

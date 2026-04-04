@@ -5,12 +5,14 @@ import "./globals.css"
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
   variable: "--font-inter",
+  display: "swap",
 })
 
 const beVietnamPro = Be_Vietnam_Pro({
   weight: ["100", "300", "400", "500", "600", "700", "800", "900"],
   subsets: ["latin", "vietnamese"],
   variable: "--font-be-vietnam-pro",
+  display: "swap",
 })
 
 export const metadata: Metadata = {
@@ -42,7 +44,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         />
       </head>
-      <body className={`${inter.variable} ${beVietnamPro.variable} font-body bg-surface text-on-surface antialiased`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${beVietnamPro.variable} font-body bg-surface text-on-surface antialiased [text-rendering:optimizeLegibility]`} suppressHydrationWarning>
         {children}
       </body>
     </html>

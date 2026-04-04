@@ -4,6 +4,9 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail } from './email'
+import { AppointmentNotificationEmail } from '@/emails/templates/appointment-notification'
+import * as React from 'react'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -150,10 +153,56 @@ export async function sendAppointmentNotification(
       return { success: false, error: error.message }
     }
 
+    // Send Email Notification (Async)
+    notifyStudentByEmail(data, template)
+
     return { success: true }
   } catch (error: any) {
     console.error('Notification error:', error)
     return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Fetch student email and send appointment email
+ */
+async function notifyStudentByEmail(
+  data: AppointmentNotificationData,
+  template: any
+) {
+  try {
+    // Fetch student email if not provided
+    let studentEmail = ''
+    
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('email')
+      .eq('id', data.studentId)
+      .single()
+    
+    studentEmail = profile?.email || ''
+
+    if (!studentEmail) {
+      console.warn(`No email found for student ${data.studentId}`)
+      return
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://hcmute-academic.vercel.app'
+    const actionUrl = `${appUrl}${template.action_url}`
+
+    await sendEmail({
+      to: studentEmail,
+      subject: `[Academic Nexus] ${template.title}`,
+      react: React.createElement(AppointmentNotificationEmail, {
+        recipientName: data.studentName,
+        title: template.title,
+        content: template.content(data),
+        actionUrl: actionUrl,
+        actionLabel: template.action_label,
+      }) as React.ReactElement,
+    })
+  } catch (err) {
+    console.error('Failed to send appointment email:', err)
   }
 }
 

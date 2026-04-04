@@ -2,6 +2,8 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
+import { StudentMetricGrid } from '@/components/student/StudentMetricGrid'
+import { StudentPageIntro } from '@/components/student/StudentPageIntro'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -69,68 +71,20 @@ export default function RegistrationPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/student' }, { label: 'Đăng ký' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Đăng Ký Khóa Luận
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý đăng ký đề tài khóa luận tốt nghiệp
-          </p>
-        </div>
-      </div>
+      <StudentPageIntro
+        eyebrow="Registration"
+        title="Đăng ký khóa luận"
+        description="Theo dõi trạng thái các lượt đăng ký đề tài, kết quả xét duyệt và lịch sử đăng ký của bạn trong cùng một bố cục rõ ràng hơn."
+      />
 
-      {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="bg-surface-container-lowest border-l-4 border-emerald-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">check_circle</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {statusCounts.approved}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Đã duyệt</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-amber-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">pending_actions</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {statusCounts.pending}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Chờ duyệt</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-slate-400 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-slate-100 text-slate-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">history</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {statusCounts.rejected}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Bị từ chối</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StudentMetricGrid
+        className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3"
+        items={[
+          { label: 'Đã duyệt', value: `${statusCounts.approved}`, hint: 'Đăng ký đã được xác nhận.', accent: 'emerald', icon: 'check_circle' },
+          { label: 'Chờ duyệt', value: `${statusCounts.pending}`, hint: 'Đang chờ hội đồng phản hồi.', accent: 'amber', icon: 'pending_actions' },
+          { label: 'Bị từ chối', value: `${statusCounts.rejected}`, hint: 'Cần xem lại đề tài hoặc hồ sơ.', accent: 'violet', icon: 'history' },
+        ]}
+      />
 
       {/* Registration Cards */}
       <div className="space-y-6">
@@ -153,7 +107,7 @@ export default function RegistrationPage() {
               )} />
 
               <CardHeader>
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
                       <Badge className={cn(
@@ -218,7 +172,7 @@ export default function RegistrationPage() {
                 )}
 
                 {/* Meta Info */}
-                <div className="flex justify-between items-center pt-4 border-t border-outline-variant/15">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-outline-variant/15">
                   <div className="flex items-center gap-4 text-xs text-secondary">
                     <span className="flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">schedule</span>
@@ -229,7 +183,7 @@ export default function RegistrationPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-primary border-primary-fixed"
+                      className="w-full sm:w-auto text-primary border-primary-fixed"
                       onClick={() => setSelectedRegistration(reg)}
                     >
                       <span className="material-symbols-outlined text-sm mr-1">visibility</span>
@@ -272,7 +226,7 @@ export default function RegistrationPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <CardHeader className="border-b sticky top-0 bg-surface z-10">
-              <div className="flex justify-between items-start">
+              <div className="flex gap-3 flex-col sm:flex-row sm:justify-between sm:items-start">
                 <div className="flex-1">
                   <Badge className={cn(
                     "mb-2 text-[10px] font-bold uppercase",
@@ -344,8 +298,8 @@ export default function RegistrationPage() {
                     {selectedRegistration.submissions.map((sub: any, index: number) => (
                       <Card key={sub.id} className="border border-outline-variant/20">
                         <CardContent className="py-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <Badge variant="outline" className="text-xs">
                                 {sub.round_name || `Vòng ${sub.round_number}`}
                               </Badge>
@@ -447,7 +401,7 @@ export default function RegistrationPage() {
                             {fb.lecturer_name?.[0]?.toUpperCase() || 'L'}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2 mb-1">
                               <p className="text-sm font-bold text-on-surface">
                                 {fb.lecturer_name || 'Giảng viên'}
                               </p>
@@ -544,9 +498,10 @@ export default function RegistrationPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-4 border-t">
                 <Button
                   variant="outline"
+                  className="w-full sm:w-auto"
                   onClick={() => setSelectedRegistration(null)}
                 >
                   Đóng

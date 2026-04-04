@@ -8,7 +8,7 @@
  * Based on "The Prestigious Curator" design direction:
  * - No-Line Rule: Structure via tonal transitions, not borders
  * - Layered Surface: UI as stacked academic papers
- * - Editorial Typography: Be Vietnam Pro + Inter
+ * - Editorial Typography: Be Vietnam Pro headings + labels, Inter for body
  */
 
 @layer base {
@@ -58,8 +58,9 @@
   }
 
   body {
-    @apply bg-surface text-on-surface antialiased;
-    font-feature-settings: "cv11", "ss01";
+    @apply bg-surface text-on-surface antialiased font-body;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+    letter-spacing: -0.01em;
     font-smooth: always;
   }
 
@@ -78,6 +79,15 @@
 
   h3 {
     @apply text-title-lg font-bold;
+  }
+
+  p, li, input, textarea, select, table {
+    @apply font-body;
+  }
+
+  button, label, .material-symbols-outlined + span {
+    @apply font-label;
+    letter-spacing: -0.01em;
   }
 
   /* Material Symbols */

@@ -43,29 +43,61 @@ export function Shell({
   onSearch,
   notifications = 0,
 }: ShellProps) {
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false)
+
+  React.useEffect(() => {
+    if (!mobileNavOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [mobileNavOpen])
+
   return (
     <div className="min-h-screen bg-surface">
-      {/* Side Navigation */}
+      {/* Desktop Side Navigation */}
       <SideNavBar
         role={role}
         userName={user?.name}
         userAvatar={user?.avatar}
       />
 
+      {/* Mobile Side Navigation */}
+      <SideNavBar
+        role={role}
+        userName={user?.name}
+        userAvatar={user?.avatar}
+        mobile
+        isOpen={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+      />
+
+      {/* Mobile Overlay */}
+      {mobileNavOpen && (
+        <button
+          type="button"
+          aria-label="Đóng menu điều hướng"
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+
       {/* Main Content Area */}
-      <div className="ml-64">
+      <div className="lg:ml-64">
         {/* Top App Bar */}
         <TopAppBar
           pageTitle={pageTitle}
           breadcrumb={breadcrumb}
           user={user}
           onSearch={onSearch}
+          onMenuClick={() => setMobileNavOpen(true)}
           notifications={notifications}
         />
 
         {/* Page Content */}
         <main className={cn(
-          "p-12 max-w-7xl mx-auto",
+          "p-4 sm:p-6 lg:p-12 max-w-7xl mx-auto",
           "min-h-[calc(100vh-4rem)]",
           className
         )}>
@@ -73,10 +105,10 @@ export function Shell({
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-outline-variant/10 bg-surface-container-lowest py-8 px-12">
+        <footer className="border-t border-outline-variant/10 bg-surface-container-lowest py-6 sm:py-8 px-4 sm:px-6 lg:px-12">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-secondary">
             <p>© 2024 Ho Chi Minh City University of Technology and Education (HCMCUTE)</p>
-            <div className="flex gap-6">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
               <a href="#" className="hover:text-primary transition-colors">Hướng dẫn</a>
               <a href="#" className="hover:text-primary transition-colors">Hỗ trợ</a>
               <a href="#" className="hover:text-primary transition-colors">Bảo mật</a>

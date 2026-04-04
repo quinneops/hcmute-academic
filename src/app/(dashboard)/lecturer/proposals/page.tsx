@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -86,6 +87,24 @@ function LecturerProposalsPage() {
     }
   }
 
+  const handleApproveAll = async () => {
+    if (stats.pending === 0) return
+    if (!window.confirm(`Bạn có chắc chắn muốn phê duyệt toàn bộ ${stats.pending} hồ sơ đang chờ không?`)) return
+
+    setIsUpdating(true)
+    setError(null)
+
+    try {
+      await api.lecturer.proposals.bulkReview('approve')
+      await fetchProposals()
+    } catch (err: any) {
+      console.error('Bulk review error:', err)
+      setError(err.message || 'Không thể phê duyệt hàng loạt')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <Shell role="lecturer" user={{ name: '...', email: '...', avatar: '' }} breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Đề cương' }]}>
@@ -103,32 +122,43 @@ function LecturerProposalsPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Đề cương' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Xét Duyệt Đề Cương
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Review và phê duyệt đề cương sinh viên
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            className="bg-primary hover:bg-primary/90 text-white"
-            onClick={() => window.location.href = '/lecturer/proposals/create'}
-          >
-            <span className="material-symbols-outlined text-sm mr-2">add</span>
-            Tạo đề cương
-          </Button>
-          <Badge className="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">
-            {stats.pending} Chờ duyệt
-          </Badge>
-          <Badge className="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase">
-            {stats.approved} Đã duyệt
-          </Badge>
-        </div>
-      </div>
+      <FlowPageIntro
+        eyebrow="Lecturer flow / proposals"
+        title="Xét duyệt đề cương"
+        description="Review và phê duyệt đề cương sinh viên trong một không gian làm việc tập trung và nhất quán hơn."
+        meta={
+          <>
+            <Badge className="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">
+              {stats.pending} chờ duyệt
+            </Badge>
+            <Badge className="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase">
+              {stats.approved} đã duyệt
+            </Badge>
+          </>
+        }
+        actions={
+          <div className="flex gap-2">
+            {stats.pending > 0 && (
+              <Button
+                variant="outline"
+                className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                onClick={handleApproveAll}
+                disabled={isUpdating}
+              >
+                <span className="material-symbols-outlined text-sm mr-2">done_all</span>
+                Phê duyệt tất cả
+              </Button>
+            )}
+            <Button
+              className="bg-primary hover:bg-primary/90 text-white"
+              onClick={() => window.location.href = '/lecturer/proposals/create'}
+            >
+              <span className="material-symbols-outlined text-sm mr-2">add</span>
+              Tạo đề cương
+            </Button>
+          </div>
+        }
+      />
 
       {error && (
         <div className="mb-6 p-4 bg-error/10 border border-error rounded-lg text-error">

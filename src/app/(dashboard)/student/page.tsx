@@ -2,6 +2,8 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
+import { StudentMetricGrid } from '@/components/student/StudentMetricGrid'
+import { StudentPageIntro } from '@/components/student/StudentPageIntro'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -105,104 +107,72 @@ export default function StudentDashboardPage() {
       breadcrumb={[{ label: 'Sinh viên' }, { label: 'Bảng điều khiển' }]}
       notifications={stats?.unreadNotifications || 0}
     >
-      {/* Hero Header */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
-        <div>
-          <h2 className="text-4xl font-headline font-extrabold text-primary tracking-tight mb-2">
-            Tổng quan Khóa luận
-          </h2>
-          <p className="text-on-surface-variant font-medium">
-            Năm học 2024-2025 • Học kỳ 2
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="px-5 py-2.5 bg-white text-primary border border-primary-fixed font-semibold rounded-lg text-sm hover:bg-surface-container-low transition-all"
-            onClick={() => router.push('/student/calendar')}
-          >
-            Xem lịch biểu
-          </Button>
-          <Button
-            className="px-5 py-2.5 bg-primary text-white font-semibold rounded-lg text-sm hover:shadow-lg hover:shadow-primary/20 transition-all"
-            onClick={() => router.push('/student/documents')}
-          >
-            Tải hướng dẫn
-          </Button>
-        </div>
-      </div>
+      <StudentPageIntro
+        eyebrow="Student dashboard"
+        title="Tổng quan khóa luận"
+        description="Theo dõi đăng ký, tiến độ thực hiện, phản hồi từ giảng viên và các tài liệu quan trọng trong một trải nghiệm thống nhất hơn."
+        meta={
+          <>
+            <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary shadow-ambient-sm">Năm học 2024-2025</span>
+            <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-secondary shadow-ambient-sm">Học kỳ 2</span>
+          </>
+        }
+        actions={
+          <>
+            <Button
+              variant="outline"
+              className="bg-white/80 border-outline-variant/40"
+              onClick={() => router.push('/student/calendar')}
+            >
+              Xem lịch biểu
+            </Button>
+            <Button onClick={() => router.push('/student/documents')}>Tải hướng dẫn</Button>
+          </>
+        }
+      />
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Registered Thesis */}
-        <Card className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-l-4 border-primary">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-primary-fixed text-primary rounded-lg">
-              <span className="material-symbols-outlined">book</span>
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Đã đăng ký</span>
-          </div>
-          <div className="text-3xl font-headline font-black text-on-surface">
-            {stats?.registrationsCount || 0} Đề tài
-          </div>
-          <p className="text-xs text-slate-500 mt-1">Đã xác nhận cho HK2</p>
-        </Card>
-
-        {/* Status */}
-        <Card className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-l-4 border-emerald-500">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <span className="material-symbols-outlined">verified</span>
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Trạng thái</span>
-          </div>
-          <div className="text-3xl font-headline font-black text-on-surface">Đã duyệt</div>
-          <div className="text-xs text-emerald-600 mt-1 font-medium flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Đang thực hiện
-          </div>
-        </Card>
-
-        {/* Progress */}
-        <Card className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-l-4 border-blue-400">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <span className="material-symbols-outlined">bolt</span>
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Hoàn thành</span>
-          </div>
-          <div className="text-3xl font-headline font-black text-on-surface">
-            {Math.round(progressPercent)}%
-          </div>
-          <div className="w-full bg-secondary-container h-1.5 rounded-full mt-3 overflow-hidden">
-            <div className="bg-primary h-full rounded-full" style={{ width: `${progressPercent}%` }}></div>
-          </div>
-        </Card>
-
-        {/* Feedback */}
-        <Card className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-l-4 border-tertiary">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-tertiary-fixed text-tertiary rounded-lg">
-              <span className="material-symbols-outlined">mark_chat_unread</span>
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Phản hồi</span>
-          </div>
-          <div className="text-3xl font-headline font-black text-on-surface">
-            {feedback && !feedback.is_read ? '1' : '0'}
-          </div>
-          <p className="text-xs text-tertiary mt-1 font-bold">
-            {feedback && !feedback.is_read ? 'Chưa đọc từ GVHD' : 'Không có mới'}
-          </p>
-        </Card>
-      </div>
+      <StudentMetricGrid
+        className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4"
+        items={[
+          {
+            label: 'Đã đăng ký',
+            value: `${stats?.registrationsCount || 0} đề tài`,
+            hint: 'Đã xác nhận cho học kỳ hiện tại.',
+            accent: 'primary',
+            icon: 'book',
+          },
+          {
+            label: 'Trạng thái',
+            value: 'Đã duyệt',
+            hint: 'Khóa luận đang trong giai đoạn thực hiện.',
+            accent: 'emerald',
+            icon: 'verified',
+          },
+          {
+            label: 'Hoàn thành',
+            value: `${Math.round(progressPercent)}%`,
+            hint: 'Tiến độ các mốc nộp và bảo vệ.',
+            accent: 'violet',
+            icon: 'bolt',
+          },
+          {
+            label: 'Phản hồi mới',
+            value: feedback && !feedback.is_read ? '1' : '0',
+            hint: feedback && !feedback.is_read ? 'Có góp ý chưa đọc từ GVHD.' : 'Hiện chưa có phản hồi mới.',
+            accent: 'amber',
+            icon: 'mark_chat_unread',
+          },
+        ]}
+      />
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Left Column - Thesis Info & Submissions */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6 lg:space-y-8">
           {/* Thesis Details Card */}
-          <Card className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100/50">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex gap-2">
+          <Card className="bg-surface-container-lowest p-4 sm:p-6 lg:p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100/50">
+            <div className="flex justify-between items-start mb-5 sm:mb-6">
+              <div className="flex flex-wrap gap-2">
                 <span className="px-3 py-1 bg-primary-fixed text-primary text-[10px] font-bold rounded uppercase tracking-wider">
                   HK2 2024-2025
                 </span>
@@ -214,19 +184,19 @@ export default function StudentDashboardPage() {
               </div>
             </div>
 
-            <h1 className="text-2xl font-headline font-bold text-primary mb-4 leading-tight">
+            <h1 className="text-xl sm:text-2xl font-headline font-bold text-primary mb-4 leading-tight">
               {stats?.latestRegistrationTitle || 'Chưa xác định đề tài'}
             </h1>
 
-            <div className="flex flex-wrap gap-2 mb-8">
+            <div className="flex flex-wrap gap-2 mb-6 sm:mb-8">
               <span className="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-medium rounded-full border border-slate-100">#AI</span>
               <span className="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-medium rounded-full border border-slate-100">#MachineLearning</span>
               <span className="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-medium rounded-full border border-slate-100">#Thesis</span>
               <span className="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-medium rounded-full border border-slate-100">#DataScience</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-surface-container-low rounded-xl">
-              <div className="flex items-center gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-6 bg-surface-container-low rounded-xl">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm">
                   <span className="material-symbols-outlined text-2xl">person</span>
                 </div>
@@ -235,7 +205,7 @@ export default function StudentDashboardPage() {
                   <p className="font-bold text-on-surface">{supervisorName || 'Chưa xác định'}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm">
                   <span className="material-symbols-outlined text-2xl">fingerprint</span>
                 </div>
@@ -249,7 +219,7 @@ export default function StudentDashboardPage() {
 
           {/* Submissions & Scores */}
           {submissions.length > 0 ? (
-            <Card className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100/50">
+            <Card className="bg-surface-container-lowest p-4 sm:p-6 lg:p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100/50">
               <div className="flex items-center gap-2 mb-6">
                 <div className="p-2 bg-primary/10 text-primary rounded-lg">
                   <span className="material-symbols-outlined">graduation_cap</span>
@@ -260,9 +230,9 @@ export default function StudentDashboardPage() {
                 {submissions.map((sub) => (
                   <div
                     key={sub.id}
-                    className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-lg hover:border-primary-fixed hover:shadow-sm transition-all group"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-white border border-slate-100 rounded-lg hover:border-primary-fixed hover:shadow-sm transition-all group"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <div className={cn(
                         "w-10 h-10 rounded-full flex items-center justify-center",
                         sub.status === 'graded' ? "bg-emerald-50 text-emerald-600" :
@@ -281,10 +251,10 @@ export default function StudentDashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right w-full sm:w-auto">
                       {sub.score !== null && sub.score !== undefined ? (
                         <>
-                          <p className="text-2xl font-black text-primary">{sub.score}</p>
+                          <p className="text-xl sm:text-2xl font-black text-primary">{sub.score}</p>
                           {sub.grade && (
                             <p className="text-[10px] font-bold text-secondary">Hạng: {sub.grade}</p>
                           )}
@@ -308,14 +278,15 @@ export default function StudentDashboardPage() {
           ) : null}
 
           {/* Thesis Progress Flow */}
-          <Card className="bg-white p-8 rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 mb-8">
-            <div className="flex justify-between items-center mb-10">
+          <Card className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 mb-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-10">
               <h3 className="text-lg font-headline font-bold text-primary">Lộ trình Khóa luận</h3>
               <span className="px-3 py-1 bg-primary-fixed text-primary text-[11px] font-bold rounded-full uppercase tracking-widest">
                 GIAI ĐOẠN HIỆN TẠI: NỘP TÀI LIỆU
               </span>
             </div>
-            <div className="relative flex justify-between">
+            <div className="relative overflow-x-auto pb-2">
+              <div className="relative flex justify-between min-w-[640px]">
               {/* Background Progress Line */}
               <div className="absolute top-5 left-0 w-full h-[2px] bg-slate-100 z-0"></div>
               <div
@@ -343,7 +314,7 @@ export default function StudentDashboardPage() {
                   : stepIcons[index].pending
 
                 return (
-                  <div key={step.id} className="relative z-10 flex flex-col items-center gap-3 group">
+                  <div key={step.id} className="relative z-10 flex flex-col items-center gap-2 sm:gap-3 group">
                     <div
                       className={cn(
                         "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300",
@@ -366,12 +337,13 @@ export default function StudentDashboardPage() {
                   </div>
                 )
               })}
+              </div>
             </div>
           </Card>
 
           {/* Recent Documents */}
-          <Card className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100/50">
-            <div className="flex justify-between items-center mb-6">
+          <Card className="bg-surface-container-lowest p-4 sm:p-6 lg:p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-slate-100/50">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-tertiary/10 text-tertiary rounded-lg">
                   <span className="material-symbols-outlined">folder</span>
@@ -394,14 +366,14 @@ export default function StudentDashboardPage() {
                 recentDocuments.map((doc) => (
                   <div
                     key={doc.id}
-                    className="p-4 bg-white border border-slate-100 rounded-lg hover:border-primary-fixed hover:shadow-sm transition-all flex justify-between items-center group"
+                    className="p-4 bg-white border border-slate-100 rounded-lg hover:border-primary-fixed hover:shadow-sm transition-all flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 group"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                       <div className="w-10 h-10 bg-slate-100 text-slate-500 flex items-center justify-center rounded">
                         <span className="material-symbols-outlined">picture_as_pdf</span>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-on-surface">{doc.title}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-on-surface truncate">{doc.title}</p>
                         <p className="text-[10px] text-slate-400">
                           {new Date(doc.created_at).toLocaleDateString('vi-VN')} • {((doc.file_size || 0) / 1024 / 1024).toFixed(1)} MB
                         </p>
@@ -411,7 +383,7 @@ export default function StudentDashboardPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => window.open(doc.file_url, '_blank')}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="self-end sm:self-auto opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     >
                       <span className="material-symbols-outlined">download</span>
                     </Button>
@@ -424,7 +396,7 @@ export default function StudentDashboardPage() {
 
         {/* Right Column - Supervisor Feedback */}
         <div className="lg:col-span-1">
-          <Card className="bg-primary text-white p-8 rounded-xl shadow-xl shadow-primary/10 relative overflow-hidden h-full">
+          <Card className="bg-primary text-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-xl shadow-primary/10 relative overflow-hidden h-full">
             {/* Decorative Icon */}
             <div className="absolute -right-4 -bottom-4 opacity-10">
               <span className="material-symbols-outlined text-[120px]">forum</span>
@@ -432,7 +404,7 @@ export default function StudentDashboardPage() {
 
             <div className="relative z-10 flex flex-col h-full">
               {/* Header */}
-              <div className="flex items-center gap-3 mb-8">
+              <div className="flex items-center gap-3 mb-6 sm:mb-8">
                 <div className="w-12 h-12 rounded-full border-2 border-white/20 overflow-hidden bg-white/20 flex items-center justify-center">
                   <span className="material-symbols-outlined text-2xl">person</span>
                 </div>
@@ -447,7 +419,7 @@ export default function StudentDashboardPage() {
               {/* Feedback Content */}
               {feedback ? (
                 <>
-                  <div className="bg-white/10 backdrop-blur-md p-6 rounded-lg border border-white/10 flex-1 mb-8">
+                  <div className="bg-white/10 backdrop-blur-md p-4 sm:p-6 rounded-lg border border-white/10 flex-1 mb-6 sm:mb-8">
                     <span className="material-symbols-outlined text-tertiary-fixed text-3xl mb-4">format_quote</span>
                     <p className="text-sm leading-relaxed font-medium italic">
                       {feedback.content}

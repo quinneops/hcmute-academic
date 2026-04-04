@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -183,17 +184,12 @@ function LecturerSchedulePage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Lịch hẹn' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Lịch Hẹn Gặp
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý lịch hẹn với sinh viên
-          </p>
-        </div>
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+      <FlowPageIntro
+        eyebrow="Lecturer / schedule"
+        title="Lịch hẹn gặp"
+        description="Quản lý lịch hẹn với sinh viên, theo dõi các buổi họp và tạo lịch mới trong một không gian trực quan hơn."
+        actions={
+          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary">
               <span className="material-symbols-outlined text-sm mr-2">add</span>
@@ -367,7 +363,8 @@ function LecturerSchedulePage() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+        }
+      />
 
       {/* Main Content - Calendar + Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

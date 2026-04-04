@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
+import { StudentPageIntro } from '@/components/student/StudentPageIntro'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -93,34 +94,23 @@ export default function FeedbackPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/student' }, { label: 'Phản hồi' }]}
       notifications={unreadCount}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Phản Hồi Từ Giảng Viên
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Xem và phản hồi các góp ý từ giảng viên
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Badge className="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">
-            {unreadCount} Chưa đọc
-          </Badge>
-          <Button
-            className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary"
-            onClick={() => setShowReplyDialog(true)}
-          >
+      <StudentPageIntro
+        eyebrow="Feedback"
+        title="Phản hồi từ giảng viên"
+        description="Đọc góp ý, quản lý hội thoại và gửi phản hồi lại cho giảng viên trong một không gian rõ ràng hơn."
+        meta={<Badge className="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">{unreadCount} chưa đọc</Badge>}
+        actions={
+          <Button onClick={() => setShowReplyDialog(true)}>
             <span className="material-symbols-outlined text-sm mr-2">edit</span>
             Viết phản hồi
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Left Column - Feedback List */}
         <div className="lg:col-span-1">
-          <Card className="bg-surface-container-lowest shadow-ambient-lg border-none sticky top-24">
+          <Card className="bg-surface-container-lowest shadow-ambient-lg border-none lg:sticky lg:top-24">
             <CardHeader>
               <CardTitle className="font-headline font-bold text-primary text-lg">
                 Danh sách phản hồi
@@ -144,7 +134,7 @@ export default function FeedbackPage() {
                       !message.is_read && !message.is_from_student && 'border-l-4 border-l-amber-500'
                     )}
                   >
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-primary-fixed text-primary flex items-center justify-center text-xs font-bold">
                           {(message.lecturer_name || 'GV').split(' ').pop()?.charAt(0)}
@@ -178,7 +168,7 @@ export default function FeedbackPage() {
           {selectedMessage ? (
             <Card className="bg-surface-container-lowest shadow-ambient-lg border-none">
               <CardHeader>
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-primary-fixed text-primary flex items-center justify-center text-lg font-bold">
                       {(selectedMessage.lecturer_name || 'GV').split(' ').pop()?.charAt(0)}
@@ -218,9 +208,9 @@ export default function FeedbackPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t border-outline-variant/15">
+                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-outline-variant/15">
                   <Button
-                    className="flex-1 bg-primary text-white"
+                    className="w-full sm:flex-1 bg-primary text-white"
                     onClick={() => setShowReplyDialog(true)}
                   >
                     <span className="material-symbols-outlined text-sm mr-2">reply</span>
@@ -242,8 +232,8 @@ export default function FeedbackPage() {
 
       {/* Reply Dialog */}
       {showReplyDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Viết phản hồi</h3>
 
             <div className="space-y-4">
@@ -270,9 +260,10 @@ export default function FeedbackPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 justify-end mt-6">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end mt-6">
               <Button
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setShowReplyDialog(false)
                   setReplySubject('')
@@ -282,7 +273,7 @@ export default function FeedbackPage() {
                 Hủy
               </Button>
               <Button
-                className="bg-primary text-white"
+                className="w-full sm:w-auto bg-primary text-white"
                 onClick={handleSendReply}
                 disabled={!replySubject.trim() || !replyContent.trim() || isSending}
               >

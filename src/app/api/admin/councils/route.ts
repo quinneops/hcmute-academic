@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail } from '@/lib/email'
+import { CouncilAppointmentEmail } from '@/emails/templates/council-appointment'
+import * as React from 'react'
 
 // Client for auth token verification
 const supabaseAuth = createClient(
@@ -188,6 +191,9 @@ export async function POST(request: NextRequest) {
         await supabaseAdmin.from('councils').delete().eq('id', newCouncil.id)
         return NextResponse.json({ error: membersError.message }, { status: 500 })
       }
+
+      // Send Email Notifications to members (Async)
+      notifyCouncilMembers(memberData, newCouncil.name, scheduled_at, room)
     }
 
     return NextResponse.json(newCouncil, { status: 201 })
@@ -198,5 +204,59 @@ export async function POST(request: NextRequest) {
       { error: error.message || 'Internal server error' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Send email notifications to all council members
+ */
+async function notifyCouncilMembers(
+  memberData: any[],
+  councilName: string,
+  scheduledAt?: string,
+  room?: string
+) {
+  try {
+    const lecturerIds = memberData.map(m => m.lecturer_id)
+    
+    // Fetch profiles for all members
+    const { data: profiles } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name, email')
+      .in('id', lecturerIds)
+
+    if (!profiles || profiles.length === 0) return
+
+    const councilDate = scheduledAt 
+      ? new Date(scheduledAt).toLocaleDateString('vi-VN', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) 
+      : undefined
+    
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/lecturer/schedule`
+
+    // Send emails in parallel
+    await Promise.all(memberData.map(async (member) => {
+      const profile = profiles.find(p => p.id === member.lecturer_id)
+      if (!profile?.email) return
+
+      await sendEmail({
+        to: profile.email,
+        subject: `[Academic Nexus] Thông báo bổ nhiệm Hội đồng: ${councilName}`,
+        react: React.createElement(CouncilAppointmentEmail, {
+          lecturerName: profile.full_name,
+          councilName: councilName,
+          role: member.role,
+          councilDate: councilDate ? `${councilDate}${room ? ` - Phòng: ${room}` : ''}` : undefined,
+          actionUrl: dashboardUrl,
+        }) as React.ReactElement,
+      })
+    }))
+  } catch (err) {
+    console.error('Failed to notify council members via email:', err)
   }
 }

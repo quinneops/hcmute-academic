@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
+import { StudentPageIntro } from '@/components/student/StudentPageIntro'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -133,32 +134,23 @@ export default function ProfilePage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/student' }, { label: 'Hồ sơ' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Hồ Sơ Sinh Viên
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý thông tin cá nhân
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary"
-            onClick={() => setIsEditing(!isEditing)}
-          >
+      <StudentPageIntro
+        eyebrow="Profile"
+        title="Hồ sơ sinh viên"
+        description="Cập nhật thông tin cá nhân, ảnh đại diện và bảo mật tài khoản trong một bố cục đồng nhất với phần còn lại của student flow."
+        actions={
+          <Button onClick={() => setIsEditing(!isEditing)}>
             <span className="material-symbols-outlined text-sm mr-2">{isEditing ? 'close' : 'edit'}</span>
             {isEditing ? 'Hủy' : 'Chỉnh sửa'}
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Left Column - Profile Card */}
         <div>
-          <Card className="bg-surface-container-lowest shadow-ambient-lg border-none sticky top-24">
-            <CardContent className="pt-8">
+          <Card className="bg-surface-container-lowest shadow-ambient-lg border-none lg:sticky lg:top-24">
+            <CardContent className="pt-6 sm:pt-8">
               {/* Avatar */}
               <div className="flex flex-col items-center mb-6">
                 <div className="relative">
@@ -264,9 +256,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-secondary uppercase block mb-2">
-                      Ngày sinh
-                    </label>
+                    <label className="text-[10px] font-bold text-secondary uppercase block mb-2">Ngày sinh</label>
                     <input
                       type="date"
                       name="date_of_birth"
@@ -347,9 +337,9 @@ export default function ProfilePage() {
 
               {/* Action Buttons */}
               {isEditing && (
-                <div className="flex gap-3 pt-6 border-t border-outline-variant/15">
+                <div className="flex flex-wrap gap-3 pt-6 border-t border-outline-variant/15">
                   <Button
-                    className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary"
+                    className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white shadow-glow-primary"
                     onClick={handleSave}
                     disabled={isUpdating}
                   >
@@ -364,7 +354,7 @@ export default function ProfilePage() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="border-slate-200 text-secondary"
+                    className="w-full sm:w-auto border-slate-200 text-secondary"
                     onClick={() => setIsEditing(false)}
                   >
                     Hủy
@@ -378,8 +368,8 @@ export default function ProfilePage() {
 
       {/* Password Change Dialog */}
       {showPasswordDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
             {/* <h3 className="text-lg font-bold mb-4">Đổi mật khẩu</h3> */}
 
             <div className="space-y-4">
@@ -406,9 +396,10 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="flex gap-3 justify-end mt-6">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end mt-6">
               <Button
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setShowPasswordDialog(false)
                   setNewPassword('')

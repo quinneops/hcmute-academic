@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -113,26 +114,21 @@ export default function AdminSemestersPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/admin' }, { label: 'Học kỳ' }]}
       notifications={5}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Quản Lý Học Kỳ
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý học kỳ academic year
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={includeArchived}
-              onCheckedChange={setIncludeArchived}
-              id="include-archived"
-            />
-            <Label htmlFor="include-archived" className="text-sm">Bao gồm đã lưu trữ</Label>
-          </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+      <FlowPageIntro
+        eyebrow="Admin / semesters"
+        title="Quản lý học kỳ"
+        description="Quản lý học kỳ, mốc thời gian và trạng thái lưu trữ với phần đầu trang đồng nhất hơn trong admin flow."
+        actions={
+          <div className="flex gap-3">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={includeArchived}
+                onCheckedChange={setIncludeArchived}
+                id="include-archived"
+              />
+              <Label htmlFor="include-archived" className="text-sm">Bao gồm đã lưu trữ</Label>
+            </div>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary">
                 <span className="material-symbols-outlined text-sm mr-2">add</span>
@@ -224,8 +220,9 @@ export default function AdminSemestersPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {isLoading && semesters.length === 0 ? (
         <div className="flex items-center justify-center py-12">

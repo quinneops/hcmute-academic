@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -39,21 +40,17 @@ export default function AdminCouncilsPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/admin' }, { label: 'Hội đồng' }]}
       notifications={5}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Quản Lý Hội Đồng
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý hội đồng bảo vệ khóa luận tốt nghiệp
-          </p>
-        </div>
-        <Button className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary">
-          <span className="material-symbols-outlined text-sm mr-2">add</span>
-          Tạo hội đồng mới
-        </Button>
-      </div>
+      <FlowPageIntro
+        eyebrow="Admin flow / councils"
+        title="Quản lý hội đồng"
+        description="Quản lý hội đồng bảo vệ khóa luận tốt nghiệp với một phần dẫn nhập thống nhất và rõ vai trò hành động hơn."
+        actions={
+          <Button className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary">
+            <span className="material-symbols-outlined text-sm mr-2">add</span>
+            Tạo hội đồng mới
+          </Button>
+        }
+      />
 
       {isLoading && councils.length === 0 ? (
         <div className="flex items-center justify-center py-12">

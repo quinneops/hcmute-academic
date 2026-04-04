@@ -1,6 +1,8 @@
 'use client'
 
 import * as React from 'react'
+import { FlowMetricGrid } from '@/components/flow/FlowMetricGrid'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -138,109 +140,38 @@ function LecturerDashboardPage() {
       breadcrumb={[{ label: 'Bảng điều khiển' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight mb-2">
-            Bảng Điều Khiển Giảng Viên
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Học kỳ 2 • Năm học 2024-2025
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-primary-fixed text-primary hover:bg-surface-container-low">
-            Xem lịch hẹn
-          </Button>
-          <Button className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary">
-            <span className="material-symbols-outlined text-sm mr-2">add</span>
-            Đề xuất mới
-          </Button>
-        </div>
-      </div>
+      <FlowPageIntro
+        eyebrow="Lecturer dashboard"
+        title="Bảng điều khiển giảng viên"
+        description="Theo dõi sinh viên hướng dẫn, đề cương cần duyệt, bài cần chấm và những buổi bảo vệ sắp tới trong một giao diện thống nhất hơn."
+        meta={
+          <>
+            <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary shadow-ambient-sm">Học kỳ 2</span>
+            <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-secondary shadow-ambient-sm">Năm học 2024-2025</span>
+          </>
+        }
+        actions={
+          <>
+            <Button variant="outline" className="bg-white/80 border-outline-variant/40">
+              Xem lịch hẹn
+            </Button>
+            <Button>
+              <span className="material-symbols-outlined text-sm mr-2">add</span>
+              Đề xuất mới
+            </Button>
+          </>
+        }
+      />
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Students */}
-        <Card className="bg-surface-container-lowest border-l-4 border-primary shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-primary-fixed text-primary rounded-lg">
-                <span className="material-symbols-outlined text-xl">group</span>
-              </div>
-              <Badge variant="secondary" className="text-[10px] font-bold uppercase">
-                Sinh viên
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats?.total_students ?? 0}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Đang hướng dẫn</p>
-          </CardContent>
-        </Card>
-
-        {/* Proposals to Review */}
-        <Card className="bg-surface-container-lowest border-l-4 border-amber-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">description</span>
-              </div>
-              <Badge variant="secondary" className="text-[10px] font-bold uppercase">
-                Chờ duyệt
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats?.pending_proposals ?? 0}
-            </div>
-            <p className="text-label-md text-amber-600 mt-1 font-medium">Đề cương cần review</p>
-          </CardContent>
-        </Card>
-
-        {/* Grading Pending */}
-        <Card className="bg-surface-container-lowest border-l-4 border-blue-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">rate_review</span>
-              </div>
-              <Badge variant="secondary" className="text-[10px] font-bold uppercase">
-                Chấm điểm
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats?.pending_grading ?? 0}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Bài cần chấm</p>
-          </CardContent>
-        </Card>
-
-        {/* Upcoming Defense */}
-        <Card className="bg-surface-container-lowest border-l-4 border-emerald-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">event</span>
-              </div>
-              <Badge variant="secondary" className="text-[10px] font-bold uppercase">
-                Bảo vệ
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats?.upcoming_defenses ?? 0}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Tuần này</p>
-          </CardContent>
-        </Card>
-      </div>
+      <FlowMetricGrid
+        className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4"
+        items={[
+          { label: 'Sinh viên', value: `${stats?.total_students ?? 0}`, hint: 'Đang được bạn hướng dẫn.', accent: 'primary', icon: 'group' },
+          { label: 'Chờ duyệt', value: `${stats?.pending_proposals ?? 0}`, hint: 'Đề cương đang chờ review.', accent: 'amber', icon: 'description' },
+          { label: 'Chấm điểm', value: `${stats?.pending_grading ?? 0}`, hint: 'Bài nộp đang cần chấm.', accent: 'violet', icon: 'rate_review' },
+          { label: 'Bảo vệ', value: `${stats?.upcoming_defenses ?? 0}`, hint: 'Các buổi bảo vệ sắp diễn ra.', accent: 'emerald', icon: 'event' },
+        ]}
+      />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

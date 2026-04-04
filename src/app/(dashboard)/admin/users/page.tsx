@@ -1,6 +1,8 @@
 'use client'
 
 import * as React from 'react'
+import { FlowMetricGrid } from '@/components/flow/FlowMetricGrid'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -117,27 +119,23 @@ export default function AdminUsersPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/admin' }, { label: 'Người dùng' }]}
       notifications={5}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Quản Lý Người Dùng
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý tài khoản sinh viên, giảng viên và quản trị
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-primary-fixed text-primary">
-            <span className="material-symbols-outlined text-sm mr-2">download</span>
-            Xuất danh sách
-          </Button>
-          <Button className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary" onClick={() => router.push('/admin/users/import')}>
-            <span className="material-symbols-outlined text-sm mr-2">person_add</span>
-            Thêm người dùng
-          </Button>
-        </div>
-      </div>
+      <FlowPageIntro
+        eyebrow="Admin / users"
+        title="Quản lý người dùng"
+        description="Quản lý tài khoản sinh viên, giảng viên và quản trị viên với bộ lọc, thống kê và tác vụ chính trong cùng một layout nhất quán."
+        actions={
+          <>
+            <Button variant="outline" className="bg-white/80 border-outline-variant/40">
+              <span className="material-symbols-outlined text-sm mr-2">download</span>
+              Xuất danh sách
+            </Button>
+            <Button onClick={() => router.push('/admin/users/import')}>
+              <span className="material-symbols-outlined text-sm mr-2">person_add</span>
+              Thêm người dùng
+            </Button>
+          </>
+        }
+      />
 
       {error && (
         <div className="mb-6 p-4 bg-error/10 border border-error rounded-lg text-error">
@@ -145,72 +143,15 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-surface-container-lowest border-l-4 border-primary shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-primary-fixed text-primary rounded-lg">
-                <span className="material-symbols-outlined text-xl">group</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats?.students ?? 0}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Sinh viên</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-blue-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">menu_book</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats?.lecturers ?? 0}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Giảng viên</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-emerald-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">admin_panel_settings</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats?.admins ?? 0}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Quản trị</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-amber-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">check_circle</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats?.active ?? 0}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Đang hoạt động</p>
-          </CardContent>
-        </Card>
-      </div>
+      <FlowMetricGrid
+        className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4"
+        items={[
+          { label: 'Sinh viên', value: `${stats?.students ?? 0}`, hint: 'Tài khoản sinh viên trong hệ thống.', accent: 'primary', icon: 'group' },
+          { label: 'Giảng viên', value: `${stats?.lecturers ?? 0}`, hint: 'Tài khoản giảng viên hiện có.', accent: 'violet', icon: 'menu_book' },
+          { label: 'Quản trị', value: `${stats?.admins ?? 0}`, hint: 'Tài khoản quản trị viên.', accent: 'emerald', icon: 'admin_panel_settings' },
+          { label: 'Đang hoạt động', value: `${stats?.active ?? 0}`, hint: 'Người dùng đang active.', accent: 'amber', icon: 'check_circle' },
+        ]}
+      />
 
       {/* Filters */}
       <Card className="bg-surface-container-lowest shadow-ambient-lg border-none mb-6">

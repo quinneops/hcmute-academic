@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail } from '@/lib/email'
+import { RegistrationStatusEmail } from '@/emails/templates/registration-status'
+import * as React from 'react'
 
 // Client for auth token verification
 const supabaseAuth = createClient(
@@ -246,8 +249,10 @@ export async function PATCH(
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
 
     // Update registration if registration_id provided
+    console.log(`[Review] Action: ${action}, Proposal: ${proposalId}, Reg: ${registration_id || 'Batch'}`)
+
     if (registration_id) {
-      const { error: regError } = await supabaseAdmin
+      const { error: regError, data: updatedRegs } = await supabaseAdmin
         .from('registrations')
         .update({
           status: newStatus,
@@ -257,13 +262,16 @@ export async function PATCH(
         })
         .eq('id', registration_id)
         .eq('proposal_id', proposalId)
+        .select()
 
       if (regError) {
+        console.error('[Review] Registration update error:', regError)
         return NextResponse.json({ error: regError.message }, { status: 500 })
       }
+      console.log(`[Review] Updated ${updatedRegs?.length || 0} registration(s)`)
     } else {
       // Update all pending registrations for this proposal
-      const { error: regError } = await supabaseAdmin
+      const { error: regError, data: updatedRegs } = await supabaseAdmin
         .from('registrations')
         .update({
           status: newStatus,
@@ -273,52 +281,136 @@ export async function PATCH(
         })
         .eq('proposal_id', proposalId)
         .eq('status', 'pending')
+        .select()
 
       if (regError) {
+        console.error('[Review] Batch registration update error:', regError)
         return NextResponse.json({ error: regError.message }, { status: 500 })
       }
+      console.log(`[Review] Updated ${updatedRegs?.length || 0} pending registration(s)`)
     }
 
-    // Update proposal status if all registrations are approved/rejected
+    // Send Email Notifications (Async)
+    notifyStudentsOfReview(proposalId, registration_id, newStatus, review_notes)
+
+    // Sync denormalized data in proposals table
     const { data: allRegistrations } = await supabaseAdmin
       .from('registrations')
-      .select('status')
+      .select('*')
       .eq('proposal_id', proposalId)
 
-    const hasApproved = allRegistrations?.some(r => r.status === 'approved')
-    const hasRejected = allRegistrations?.some(r => r.status === 'rejected')
-    const hasPending = allRegistrations?.some(r => r.status === 'pending')
-
-    let newProposalStatus = proposal.status
-    if (!hasPending && hasApproved && !hasRejected) {
-      newProposalStatus = 'approved'
-    } else if (!hasPending && hasRejected && !hasApproved) {
-      newProposalStatus = 'rejected'
-    } else if (hasPending) {
-      newProposalStatus = 'pending'
+    if (!allRegistrations) {
+      console.error('[Review] Failed to fetch all registrations for sync')
+      return NextResponse.json({ error: 'Failed to sync registrations' }, { status: 500 })
     }
 
-    await supabaseAdmin
+    // Rebuild registrations_summary JSONB
+    const updatedSummary = allRegistrations.map((reg: any) => ({
+      id: reg.id,
+      student_id: reg.student_id,
+      student_name: reg.student_name,
+      student_code: reg.student_code,
+      student_email: reg.student_email,
+      status: reg.status,
+      submitted_at: reg.submitted_at,
+      reviewed_at: reg.reviewed_at,
+      review_notes: reg.review_notes,
+      motivation_letter: reg.motivation_letter,
+      proposed_title: reg.proposed_title,
+    }))
+
+    // Direct status update
+    const finalProposalStatus = newStatus
+
+    const { error: propUpdateError, data: updatedProposal } = await supabaseAdmin
       .from('proposals')
       .update({
-        status: newProposalStatus,
-        review_notes: review_notes || null,
-        reviewed_at: new Date().toISOString(),
+        status: finalProposalStatus,
+        registrations_summary: updatedSummary,
+        updated_at: new Date().toISOString()
       })
       .eq('id', proposalId)
+      .select()
+      .single()
+
+    if (propUpdateError) {
+      console.error('[Review] Proposal sync error:', propUpdateError)
+    } else {
+      console.log(`[Review] Proposal status updated to: ${updatedProposal.status}`)
+    }
 
     return NextResponse.json({
       success: true,
       action,
       registration_id,
+      proposal_status: finalProposalStatus,
+      updated_registrations: allRegistrations.length
     })
-
   } catch (error: any) {
     console.error('Proposal review API error:', error)
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Send email notifications to student(s) after review
+ */
+async function notifyStudentsOfReview(
+  proposalId: string,
+  registrationId: string | undefined,
+  status: 'approved' | 'rejected',
+  reviewNotes?: string
+) {
+  try {
+    // Get proposal title
+    const { data: proposal } = await supabaseAdmin
+      .from('proposals')
+      .select('title')
+      .eq('id', proposalId)
+      .single()
+
+    if (!proposal) return
+
+    // Get target registration(s)
+    let query = supabaseAdmin
+      .from('registrations')
+      .select('student_name, student_email')
+      .eq('proposal_id', proposalId)
+
+    if (registrationId) {
+      query = query.eq('id', registrationId)
+    } else {
+      // If batch, we only notify those that were just updated (this is a bit tricky, but usually batch means all was pending)
+      query = query.eq('status', status)
+    }
+
+    const { data: regs } = await query
+
+    if (!regs || regs.length === 0) return
+
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/student/registrations`
+
+    // Send emails in parallel
+    await Promise.all(regs.map(async (reg) => {
+      if (!reg.student_email) return
+
+      await sendEmail({
+        to: reg.student_email,
+        subject: `[Academic Nexus] Kết quả đăng ký đề tài: ${proposal.title}`,
+        react: React.createElement(RegistrationStatusEmail, {
+          studentName: reg.student_name,
+          proposalTitle: proposal.title,
+          status: status,
+          reviewNotes: reviewNotes,
+          actionUrl: dashboardUrl,
+        }) as React.ReactElement,
+      })
+    }))
+  } catch (err) {
+    console.error('Failed to notify students via email:', err)
   }
 }
 

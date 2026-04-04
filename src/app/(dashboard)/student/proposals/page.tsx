@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
+import { StudentPageIntro } from '@/components/student/StudentPageIntro'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -162,6 +163,18 @@ export default function ProposalsPage() {
       breadcrumb={[{ label: 'Sinh viên' }, { label: 'Gợi ý đề tài' }]}
       notifications={0}
     >
+      <StudentPageIntro
+        eyebrow="Proposals"
+        title="Khám phá và đăng ký đề tài"
+        description="Tìm đề tài phù hợp, xem gợi ý AI và quản lý lượt đăng ký của bạn trong một trải nghiệm rõ ràng hơn."
+        actions={
+          <Button variant="outline" onClick={handleLoadRecommendations} disabled={isLoadingRecommendations}>
+            <span className="material-symbols-outlined text-sm mr-2">psychology</span>
+            {isLoadingRecommendations ? 'Đang tải gợi ý' : 'Tải gợi ý AI'}
+          </Button>
+        }
+      />
+
       {/* Hero Banners Section */}
       {featuredProposalsList.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -219,7 +232,7 @@ export default function ProposalsPage() {
               </div>
               <h3 className="text-lg font-bold font-headline text-purple-900">Đề tài phù hợp với bạn</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {aiRecommendations.map((rec) => (
                 <div
                   key={rec.proposal_id}
@@ -248,7 +261,7 @@ export default function ProposalsPage() {
       )}
 
       {/* Filter Section */}
-      <div className="bg-surface-container-low p-6 rounded-xl mb-6 flex flex-wrap items-end gap-6">
+      <div className="bg-surface-container-low p-4 sm:p-6 rounded-xl mb-6 flex flex-wrap items-end gap-4 sm:gap-6">
         <div className="flex-1 min-w-[200px]">
           <label className="block text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-2 font-label">Giảng viên hướng dẫn</label>
           <select
@@ -275,11 +288,11 @@ export default function ProposalsPage() {
             ))}
           </select>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
           {(selectedLecturer !== 'all' || selectedCategory !== 'all') && (
             <Button
               variant="outline"
-              className="h-[46px] px-6 border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-100 transition-all"
+              className="h-[46px] px-4 sm:px-6 border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-100 transition-all"
               onClick={() => {
                 setSelectedLecturer('all')
                 setSelectedCategory('all')
@@ -289,7 +302,7 @@ export default function ProposalsPage() {
               Xóa bộ lọc
             </Button>
           )}
-          <Button className="h-[46px] px-6 bg-primary text-white font-bold text-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-2">
+          <Button className="h-[46px] px-4 sm:px-6 bg-primary text-white font-bold text-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-2">
             <span className="material-symbols-outlined text-sm">filter_list</span>
             Lọc đề tài ({filteredProposals.length})
           </Button>
@@ -304,7 +317,7 @@ export default function ProposalsPage() {
             {myRegistrations.map((reg) => (
               <div
                 key={reg.id}
-                className="bg-surface-container-lowest p-6 rounded-xl flex items-center justify-between gap-6 hover:bg-surface-bright transition-colors shadow-sm shadow-blue-900/5 border-l-4 border-primary"
+                className="bg-surface-container-lowest p-4 sm:p-6 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 hover:bg-surface-bright transition-colors shadow-sm shadow-blue-900/5 border-l-4 border-primary"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
@@ -329,7 +342,7 @@ export default function ProposalsPage() {
                       </span>
                     )}
                     {reg.proposal_tags && reg.proposal_tags.length > 0 && (
-                      <div className="flex gap-1">
+                      <div className="flex flex-wrap gap-1">
                         {reg.proposal_tags.slice(0, 3).map((tag, i) => (
                           <span key={i} className="text-[10px] bg-primary-fixed text-primary px-2 py-0.5 rounded font-medium">
                             #{tag}
@@ -500,8 +513,8 @@ export default function ProposalsPage() {
 
       {/* Registration Dialog */}
       {showRegisterDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                 <span className="material-symbols-outlined">assignment</span>
@@ -518,9 +531,10 @@ export default function ProposalsPage() {
               value={motivationLetter}
               onChange={(e) => setMotivationLetter(e.target.value)}
             />
-            <div className="flex gap-3 justify-end">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end">
               <Button
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setShowRegisterDialog(null)
                   setMotivationLetter('')
@@ -529,7 +543,7 @@ export default function ProposalsPage() {
                 Hủy
               </Button>
               <Button
-                className="bg-primary text-white font-bold"
+                className="w-full sm:w-auto bg-primary text-white font-bold"
                 onClick={() => handleRegister(showRegisterDialog)}
                 disabled={isRegistering === showRegisterDialog}
               >

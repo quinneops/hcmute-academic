@@ -17,6 +17,9 @@ interface SideNavBarProps {
   userName?: string
   userAvatar?: string
   onLogout?: () => void
+  mobile?: boolean
+  isOpen?: boolean
+  onClose?: () => void
 }
 
 const studentNavItems: NavItem[] = [
@@ -26,8 +29,10 @@ const studentNavItems: NavItem[] = [
   { icon: 'trending_up', label: 'Tiến độ', href: '/student/submissions' },
   // { icon: 'folder_open', label: 'Tài liệu', href: '/student/documents' },
   { icon: 'forum', label: 'Phản hồi', href: '/student/feedback' },
+  { icon: 'calendar_month', label: 'Lịch hẹn', href: '/student/appointments' },
+  { icon: 'auto_awesome', label: 'Trợ lý AI', href: '/student/ai' },
   { icon: 'notifications', label: 'Thông báo', href: '/student/notifications' },
-]
+];
 
 const lecturerNavItems: NavItem[] = [
   { icon: 'dashboard', label: 'Bảng điều khiển', href: '/lecturer' },
@@ -36,7 +41,9 @@ const lecturerNavItems: NavItem[] = [
   { icon: 'assignment', label: 'Đề tài', href: '/lecturer/proposals' },
   { icon: 'event', label: 'Lịch bảo vệ', href: '/lecturer/schedule' },
   { icon: 'forum', label: 'Phản hồi', href: '/lecturer/feedback' },
-]
+  { icon: 'calendar_month', label: 'Lịch hẹn', href: '/lecturer/appointments' },
+  { icon: 'auto_awesome', label: 'Trợ lý AI', href: '/lecturer/ai' },
+];
 
 const adminNavItems: NavItem[] = [
   { icon: 'dashboard', label: 'Bảng điều khiển', href: '/admin' },
@@ -47,7 +54,15 @@ const adminNavItems: NavItem[] = [
   { icon: 'assessment', label: 'Báo cáo', href: '/admin/reports' },
 ]
 
-export function SideNavBar({ role, userName, userAvatar, onLogout }: SideNavBarProps) {
+export function SideNavBar({
+  role,
+  userName,
+  userAvatar,
+  onLogout,
+  mobile = false,
+  isOpen = false,
+  onClose,
+}: SideNavBarProps) {
   const pathname = usePathname()
 
   const navItems = role === 'student'
@@ -57,7 +72,15 @@ export function SideNavBar({ role, userName, userAvatar, onLogout }: SideNavBarP
     : adminNavItems
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-surface-container-low border-r border-outline-variant/10 flex flex-col z-50">
+    <aside
+      className={cn(
+        "fixed left-0 top-0 h-screen w-64 bg-surface-container-low border-r border-outline-variant/10 flex flex-col z-50 transition-transform duration-300",
+        mobile
+          ? (isOpen ? "translate-x-0" : "-translate-x-full")
+          : "hidden lg:flex"
+      )}
+      aria-hidden={mobile ? !isOpen : undefined}
+    >
       {/* Brand Header */}
       <div className="px-6 py-6 mb-4">
         <div className="flex items-center gap-3">
@@ -85,6 +108,7 @@ export function SideNavBar({ role, userName, userAvatar, onLogout }: SideNavBarP
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => mobile && onClose?.()}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
                 isActive
@@ -105,7 +129,11 @@ export function SideNavBar({ role, userName, userAvatar, onLogout }: SideNavBarP
       </nav>
 
       {/* User Profile - Link to Profile Page */}
-      <Link href={role === 'student' ? '/student/profile' : role === 'lecturer' ? '/lecturer/profile' : '/admin/profile'} className="block px-4 py-4 border-t border-outline-variant/15">
+      <Link
+        href={role === 'student' ? '/student/profile' : role === 'lecturer' ? '/lecturer/profile' : '/admin/profile'}
+        className="block px-4 py-4 border-t border-outline-variant/15"
+        onClick={() => mobile && onClose?.()}
+      >
         <div className="flex items-center gap-3 p-3 bg-surface-container-lowest rounded-lg shadow-ambient-sm hover:bg-surface-container-high transition-colors">
           <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-white font-bold text-sm">
             {userAvatar ? (

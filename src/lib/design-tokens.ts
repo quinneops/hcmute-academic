@@ -79,7 +79,7 @@ export const colors = {
 export const fontFamily = {
   headline: ['Be Vietnam Pro', 'sans-serif'],
   body: ['Inter', 'sans-serif'],
-  label: ['Inter', 'sans-serif'],
+  label: ['Be Vietnam Pro', 'sans-serif'],
 } as const
 
 export const fontSize = {

@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -139,26 +140,17 @@ function LecturerProfilePage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Hồ sơ' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Hồ Sơ Giảng Viên
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý thông tin cá nhân
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary"
-            onClick={() => setIsEditing(!isEditing)}
-          >
+      <FlowPageIntro
+        eyebrow="Lecturer / profile"
+        title="Hồ sơ giảng viên"
+        description="Quản lý thông tin cá nhân, hồ sơ chuyên môn và thiết lập tài khoản với cùng ngôn ngữ thiết kế của toàn bộ lecturer flow."
+        actions={
+          <Button onClick={() => setIsEditing(!isEditing)}>
             <span className="material-symbols-outlined text-sm mr-2">{isEditing ? 'close' : 'edit'}</span>
             {isEditing ? 'Hủy' : 'Chỉnh sửa'}
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Profile Card */}

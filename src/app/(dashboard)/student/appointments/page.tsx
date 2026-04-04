@@ -2,6 +2,8 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
+import { StudentEmptyState } from '@/components/student/StudentEmptyState'
+import { StudentPageIntro } from '@/components/student/StudentPageIntro'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -139,15 +141,11 @@ function StudentAppointmentsPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/student' }, { label: 'Lịch hẹn' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="mb-8">
-        <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-          Lịch Hẹn Với Giảng Viên
-        </h2>
-        <p className="text-body-md text-on-surface-variant font-medium">
-          Xem và quản lý các lịch hẹn với giảng viên hướng dẫn
-        </p>
-      </div>
+      <StudentPageIntro
+        eyebrow="Appointments"
+        title="Lịch hẹn với giảng viên"
+        description="Theo dõi các buổi họp, lịch bảo vệ và lịch trao đổi với giảng viên trong một luồng trực quan và chuyên nghiệp hơn."
+      />
 
       {error && (
         <div className="mb-6 p-4 bg-error/10 border border-error rounded-lg text-error">
@@ -157,13 +155,11 @@ function StudentAppointmentsPage() {
 
       {/* Upcoming Appointments */}
       {upcomingAppointments.length === 0 ? (
-        <Card className="bg-surface-container-lowest shadow-ambient-lg border-none">
-          <CardContent className="py-12 text-center text-secondary">
-            <span className="material-symbols-outlined text-4xl mb-2">event_available</span>
-            <p>Chưa có lịch hẹn sắp tới nào</p>
-            <p className="text-sm mt-2">Giảng viên sẽ tạo lịch hẹn và thông báo cho bạn</p>
-          </CardContent>
-        </Card>
+        <StudentEmptyState
+          icon="event_available"
+          title="Chưa có lịch hẹn sắp tới"
+          description="Giảng viên sẽ tạo lịch hẹn và thông báo cho bạn tại đây."
+        />
       ) : (
         <div className="mb-8">
           <h3 className="text-lg font-bold text-secondary uppercase tracking-widest mb-4">Sắp tới</h3>
@@ -304,12 +300,12 @@ function StudentAppointmentsPage() {
       {selectedAppointment && (
         <>
           <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
               <DialogHeader>
                 <DialogTitle>Chi Tiết Lịch Hẹn</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm text-secondary">Loại</Label>
                     <p className="font-medium">{getTypeLabel(selectedAppointment.type)}</p>
@@ -334,7 +330,7 @@ function StudentAppointmentsPage() {
 
                 <div>
                   <Label className="text-sm text-secondary">Giảng viên</Label>
-                  <p className="font-medium">
+                  <p className="font-medium break-all sm:break-normal">
                     {selectedAppointment.lecturer_name || 'Giảng viên'}
                     {selectedAppointment.lecturer_email && (
                       <span className="text-sm text-secondary ml-2">
@@ -349,7 +345,7 @@ function StudentAppointmentsPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm text-secondary">Ngày giờ</Label>
                     <p className="font-medium">{formatDateTime(selectedAppointment.scheduled_at)}</p>
@@ -401,7 +397,7 @@ function StudentAppointmentsPage() {
                   </div>
                 )}
 
-                <div className="flex gap-2 pt-4 border-t">
+                <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
                   {selectedAppointment.meeting_link && selectedAppointment.status === 'scheduled' && (
                     <Button
                       onClick={() => window.open(selectedAppointment.meeting_link, '_blank')}
@@ -431,7 +427,7 @@ function StudentAppointmentsPage() {
 
           {/* Reschedule Request Modal */}
           <Dialog open={isRescheduleModalOpen} onOpenChange={setIsRescheduleModalOpen}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg p-4 sm:p-6">
               <DialogHeader>
                 <DialogTitle>Yêu Cầu Đổi Lịch</DialogTitle>
               </DialogHeader>
@@ -446,7 +442,7 @@ function StudentAppointmentsPage() {
                     rows={4}
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col-reverse sm:flex-row gap-2">
                   <Button
                     onClick={handleRescheduleRequest}
                     disabled={!rescheduleReason.trim()}

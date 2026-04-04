@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail } from '@/lib/email'
+import { RegistrationStatusEmail } from '@/emails/templates/registration-status'
+import * as React from 'react'
 
 // Client for auth token verification
 const supabaseAuth = createClient(
@@ -157,7 +160,7 @@ export async function POST(request: NextRequest) {
         .from('proposals')
         .update({
           status: newStatus,
-          reviewed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .eq('id', proposal_id)
 
@@ -210,6 +213,9 @@ export async function POST(request: NextRequest) {
             .update({ registrations_summary: updatedSummary })
             .eq('id', proposal_id)
         }
+
+        // Send Email Notifications (Async)
+        notifyStudentsOfReview(proposal_id, newStatus, review_notes)
       }
 
       return NextResponse.json({
@@ -269,12 +275,61 @@ export async function POST(request: NextRequest) {
       success: true,
       proposal,
     })
-
   } catch (error: any) {
     console.error('Proposals API error:', error)
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Send email notifications to student(s) after review
+ */
+async function notifyStudentsOfReview(
+  proposalId: string,
+  status: 'approved' | 'rejected',
+  reviewNotes?: string
+) {
+  try {
+    // Get proposal title
+    const { data: proposal } = await supabaseAdmin
+      .from('proposals')
+      .select('title')
+      .eq('id', proposalId)
+      .single()
+
+    if (!proposal) return
+
+    // Get target registration(s)
+    const { data: regs } = await supabaseAdmin
+      .from('registrations')
+      .select('student_name, student_email')
+      .eq('proposal_id', proposalId)
+      .eq('status', status)
+
+    if (!regs || regs.length === 0) return
+
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/student/registrations`
+
+    // Send emails in parallel
+    await Promise.all(regs.map(async (reg) => {
+      if (!reg.student_email) return
+
+      await sendEmail({
+        to: reg.student_email,
+        subject: `[Academic Nexus] Kết quả đăng ký đề tài: ${proposal.title}`,
+        react: React.createElement(RegistrationStatusEmail, {
+          studentName: reg.student_name,
+          proposalTitle: proposal.title,
+          status: status,
+          reviewNotes: reviewNotes,
+          actionUrl: dashboardUrl,
+        }) as React.ReactElement,
+      })
+    }))
+  } catch (err) {
+    console.error('Failed to notify students via email:', err)
   }
 }

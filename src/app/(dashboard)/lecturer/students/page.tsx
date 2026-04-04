@@ -1,6 +1,8 @@
 'use client'
 
 import * as React from 'react'
+import { FlowMetricGrid } from '@/components/flow/FlowMetricGrid'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -78,23 +80,17 @@ function LecturerStudentsPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Sinh viên' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Danh Sách Sinh Viên
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý sinh viên đang hướng dẫn
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-primary-fixed text-primary">
+      <FlowPageIntro
+        eyebrow="Lecturer / students"
+        title="Danh sách sinh viên"
+        description="Quản lý nhóm sinh viên đang hướng dẫn, theo dõi tiến độ và lọc nhanh theo nhu cầu làm việc hàng ngày."
+        actions={
+          <Button variant="outline" className="bg-white/80 border-outline-variant/40">
             <span className="material-symbols-outlined text-sm mr-2">download</span>
             Xuất danh sách
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {error && (
         <div className="mb-6 p-4 bg-error/10 border border-error rounded-lg text-error">
@@ -102,54 +98,14 @@ function LecturerStudentsPage() {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="bg-surface-container-lowest border-l-4 border-primary shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-primary-fixed text-primary rounded-lg">
-                <span className="material-symbols-outlined text-xl">group</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">{stats.total}</div>
-            <p className="text-label-md text-secondary mt-1">Tổng số sinh viên</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-emerald-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">check_circle</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats.active}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Đang thực hiện</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-blue-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">school</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats.defended}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Đã bảo vệ</p>
-          </CardContent>
-        </Card>
-      </div>
+      <FlowMetricGrid
+        className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3"
+        items={[
+          { label: 'Tổng số sinh viên', value: `${stats.total}`, hint: 'Toàn bộ sinh viên bạn đang phụ trách.', accent: 'primary', icon: 'group' },
+          { label: 'Đang thực hiện', value: `${stats.active}`, hint: 'Các đề tài còn đang triển khai.', accent: 'emerald', icon: 'check_circle' },
+          { label: 'Đã bảo vệ', value: `${stats.defended}`, hint: 'Sinh viên đã hoàn tất bảo vệ.', accent: 'violet', icon: 'school' },
+        ]}
+      />
 
       {/* Search and Filter */}
       <Card className="bg-surface-container-lowest shadow-ambient-lg border-none mb-6">

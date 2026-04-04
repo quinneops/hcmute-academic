@@ -1,6 +1,8 @@
 'use client'
 
 import * as React from 'react'
+import { FlowMetricGrid } from '@/components/flow/FlowMetricGrid'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -48,92 +50,33 @@ export default function AdminThesesPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/admin' }, { label: 'Khóa luận' }]}
       notifications={5}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Quản Lý Khóa Luận
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Theo dõi và quản lý tất cả khóa luận tốt nghiệp
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-primary-fixed text-primary">
-            <span className="material-symbols-outlined text-sm mr-2">download</span>
-            Xuất báo cáo
-          </Button>
-          <Button className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary">
-            <span className="material-symbols-outlined text-sm mr-2">add</span>
-            Tạo khóa luận mới
-          </Button>
-        </div>
-      </div>
+      <FlowPageIntro
+        eyebrow="Admin flow / theses"
+        title="Quản lý khóa luận"
+        description="Theo dõi và quản lý tất cả khóa luận tốt nghiệp với lớp mở đầu đồng nhất và chuyên nghiệp hơn."
+        actions={
+          <>
+            <Button variant="outline" className="bg-white/80 border-outline-variant/40">
+              <span className="material-symbols-outlined text-sm mr-2">download</span>
+              Xuất báo cáo
+            </Button>
+            <Button>
+              <span className="material-symbols-outlined text-sm mr-2">add</span>
+              Tạo khóa luận mới
+            </Button>
+          </>
+        }
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-surface-container-lowest border-l-4 border-primary shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-primary-fixed text-primary rounded-lg">
-                <span className="material-symbols-outlined text-xl">description</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">{stats.total}</div>
-            <p className="text-label-md text-secondary mt-1">Tổng số</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-blue-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">schedule</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats.inProgress}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Đang làm</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-amber-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">pending_actions</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats.pendingReview}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Chờ duyệt</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-surface-container-lowest border-l-4 border-emerald-500 shadow-ambient-lg">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-                <span className="material-symbols-outlined text-xl">check_circle</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-headline-lg font-headline font-black text-on-surface">
-              {stats.completed}
-            </div>
-            <p className="text-label-md text-secondary mt-1">Hoàn thành</p>
-          </CardContent>
-        </Card>
-      </div>
+      <FlowMetricGrid
+        className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4"
+        items={[
+          { label: 'Tổng số', value: `${stats.total}`, hint: 'Toàn bộ khóa luận trong hệ thống.', accent: 'primary', icon: 'description' },
+          { label: 'Đang làm', value: `${stats.inProgress}`, hint: 'Đề tài đang được triển khai.', accent: 'violet', icon: 'schedule' },
+          { label: 'Chờ duyệt', value: `${stats.pendingReview}`, hint: 'Các hồ sơ đang chờ xét duyệt.', accent: 'amber', icon: 'pending_actions' },
+          { label: 'Hoàn thành', value: `${stats.completed}`, hint: 'Khóa luận đã hoàn tất.', accent: 'emerald', icon: 'check_circle' },
+        ]}
+      />
 
       {isLoading && theses.length === 0 ? (
         <div className="flex items-center justify-center py-12">

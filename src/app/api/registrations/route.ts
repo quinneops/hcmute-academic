@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail } from '@/lib/email'
+import { ProposalNotificationEmail } from '@/emails/templates/proposal-notification'
+import * as React from 'react'
 
 // Use service role key to bypass RLS (we'll validate auth manually)
 const supabaseAdmin = createClient(
@@ -199,7 +202,7 @@ export async function POST(request: Request) {
     // Get proposal info for denormalization
     const { data: proposal } = await supabaseAdmin
       .from('proposals')
-      .select('title, supervisor_id, supervisor_name, supervisor_email')
+      .select('title, supervisor_id, supervisor_name, supervisor_email, type')
       .eq('id', proposal_id)
       .single()
 
@@ -257,11 +260,51 @@ export async function POST(request: Request) {
         registrations_summary: newSummary,
         registrations_count: (propData?.registrations_count || 0) + 1,
       })
-      .eq('id', proposal_id)
+    // Send Email Notification to Supervisor (Async)
+    if (proposal.supervisor_email) {
+      notifySupervisor(
+        proposal.supervisor_name,
+        proposal.supervisor_email,
+        registration.student_name,
+        registration.student_code || '',
+        proposal.title,
+        proposal.type
+      )
+    }
 
     return NextResponse.json(registration, { status: 201 })
   } catch (error: any) {
     console.error('API registrations POST error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+/**
+ * Send email notification to supervisor
+ */
+async function notifySupervisor(
+  supervisorName: string,
+  supervisorEmail: string,
+  studentName: string,
+  studentCode: string,
+  proposalTitle: string,
+  proposalType: string
+) {
+  try {
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/lecturer/proposals`
+    
+    await sendEmail({
+      to: supervisorEmail,
+      subject: `[Academic Nexus] Đăng ký đề tài mới từ sinh viên ${studentName}`,
+      react: React.createElement(ProposalNotificationEmail, {
+        studentName,
+        studentCode,
+        proposalTitle,
+        proposalType,
+        actionUrl: dashboardUrl,
+      }) as React.ReactElement,
+    })
+  } catch (err) {
+    console.error('Failed to notify supervisor via email:', err)
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -78,23 +79,20 @@ function LecturerProposalCreatePage() {
       ]}
       notifications={0}
     >
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Tạo Đề Cương Mới
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Tạo đề tài khóa luận tốt nghiệp
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => router.push('/lecturer/proposals')}
-        >
-          <span className="material-symbols-outlined text-sm mr-2">arrow_back</span>
-          Quay lại
-        </Button>
-      </div>
+      <FlowPageIntro
+        eyebrow="Lecturer flow / create proposal"
+        title="Tạo đề cương mới"
+        description="Tạo đề tài khóa luận tốt nghiệp với một lớp mở đầu đồng nhất hơn cùng phần còn lại của lecturer flow."
+        actions={
+          <Button
+            variant="outline"
+            onClick={() => router.push('/lecturer/proposals')}
+          >
+            <span className="material-symbols-outlined text-sm mr-2">arrow_back</span>
+            Quay lại
+          </Button>
+        }
+      />
 
       {error && (
         <div className="mb-6 p-4 bg-error/10 border border-error rounded-lg text-error">

@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Shell } from '@/components/layout/Shell'
+import { StudentPageIntro } from '@/components/student/StudentPageIntro'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -166,66 +167,58 @@ export default function SubmissionsPage() {
       breadcrumb={[{ label: 'Theses' }, { label: 'Trạng thái Đề tài' }]}
       notifications={0}
     >
-      <div className="max-w-6xl mx-auto pt-6 pb-12 px-8">
-        {/* Hero Header Card */}
-        <section className="bg-surface-container-lowest rounded-xl p-8 mb-8 flex flex-col md:flex-row justify-between items-center gap-8 shadow-sm">
-          <div className="flex-1">
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold uppercase tracking-wider mb-4">
-              Tiến độ hiện tại
-            </div>
-            <h1 className="font-headline text-3xl font-extrabold text-primary mb-3 leading-tight tracking-tight">
-              {currentRegistration?.proposal_title || 'Chưa xác định đề tài'}
-            </h1>
-            <div className="flex items-center gap-6 text-on-surface-variant flex-wrap">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">person</span>
-                <span className="text-sm font-medium">Sinh viên: {profile?.full_name || user.name}</span>
+      <div className="max-w-6xl mx-auto pt-4 sm:pt-6 pb-10 sm:pb-12 px-0 sm:px-2 lg:px-8">
+        <StudentPageIntro
+          eyebrow="Submissions"
+          title={currentRegistration?.proposal_title || 'Theo dõi tiến độ nộp bài'}
+          description="Quản lý các mốc nộp, xem trạng thái hồ sơ và theo dõi tiến độ thực hiện khóa luận trong một luồng thống nhất."
+          meta={
+            <>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-800">Tiến độ hiện tại</span>
+              <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-secondary">Sinh viên: {profile?.full_name || user.name}</span>
+              {currentRegistration?.supervisor_name ? (
+                <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-secondary">GVHD: {currentRegistration.supervisor_name}</span>
+              ) : null}
+            </>
+          }
+          actions={
+            <div className="relative flex h-32 w-32 items-center justify-center">
+              <svg className="h-full w-full -rotate-90 transform">
+                <circle
+                  className="text-secondary-container"
+                  cx="64"
+                  cy="64"
+                  fill="transparent"
+                  r="54"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                />
+                <circle
+                  className="text-primary"
+                  cx="64"
+                  cy="64"
+                  fill="transparent"
+                  r="54"
+                  stroke="currentColor"
+                  strokeDasharray={2 * Math.PI * 54}
+                  strokeDashoffset={2 * Math.PI * 54 - (progressPercent / 100) * (2 * Math.PI * 54)}
+                  strokeLinecap="round"
+                  strokeWidth="8"
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center">
+                <span className="text-2xl font-black text-primary">{progressPercent}%</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Hoàn thành</span>
               </div>
-              {currentRegistration?.supervisor_name && (
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">school</span>
-                  <span className="text-sm font-medium">GVHD: {currentRegistration.supervisor_name}</span>
-                </div>
-              )}
             </div>
-          </div>
-          {/* Circular Progress */}
-          <div className="relative w-40 h-40 flex items-center justify-center">
-            <svg className="w-full h-full transform -rotate-90">
-              <circle
-                className="text-secondary-container"
-                cx="80"
-                cy="80"
-                fill="transparent"
-                r="70"
-                stroke="currentColor"
-                strokeWidth="8"
-              />
-              <circle
-                className="text-primary"
-                cx="80"
-                cy="80"
-                fill="transparent"
-                r="70"
-                stroke="currentColor"
-                strokeDasharray={circumference}
-                strokeDashoffset={circumference - (progressPercent / 100) * circumference}
-                strokeLinecap="round"
-                strokeWidth="8"
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center">
-              <span className="text-3xl font-black text-primary">{progressPercent}%</span>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Hoàn thành</span>
-            </div>
-          </div>
-        </section>
+          }
+        />
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
           {/* Progress Timeline (2/3) */}
-          <div className="lg:col-span-2 bg-surface-container-low rounded-xl p-8">
-            <h2 className="font-headline text-xl font-bold text-primary mb-8">Lộ trình Thực hiện</h2>
+          <div className="lg:col-span-2 bg-surface-container-low rounded-xl p-4 sm:p-6 lg:p-8">
+            <h2 className="font-headline text-lg sm:text-xl font-bold text-primary mb-6 sm:mb-8">Lộ trình Thực hiện</h2>
             <div className="space-y-0">
               {milestoneProgress.map((milestone, index) => {
                 const isCompleted = milestone.completed
@@ -264,7 +257,7 @@ export default function SubmissionsPage() {
                       </span>
                     </div>
                     <div className="flex-1 pt-1">
-                      <div className="flex justify-between items-start mb-1">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-1">
                         <h3 className={cn(
                           "font-bold text-lg",
                           isPending ? "text-slate-500" : "text-primary"
@@ -474,7 +467,7 @@ export default function SubmissionsPage() {
                       key={submission.id}
                       className="p-3 bg-surface-container-low rounded-lg hover:bg-surface-container-low/80 transition-all"
                     >
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                             <span className="material-symbols-outlined text-sm">description</span>
@@ -523,8 +516,8 @@ export default function SubmissionsPage() {
 
       {/* Upload Dialog */}
       {showUploadDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md shadow-2xl">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                 <span className="material-symbols-outlined">cloud_upload</span>
@@ -600,9 +593,10 @@ export default function SubmissionsPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 justify-end mt-6">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end mt-6">
               <Button
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setShowUploadDialog(false)
                   setSelectedFiles([])
@@ -612,7 +606,7 @@ export default function SubmissionsPage() {
                 Hủy
               </Button>
               <Button
-                className="bg-primary text-white font-bold"
+                className="w-full sm:w-auto bg-primary text-white font-bold"
                 onClick={handleUpload}
                 disabled={selectedFiles.length === 0 || isUploadingMultiple}
               >
@@ -634,12 +628,12 @@ export default function SubmissionsPage() {
       )}
 
       {/* FAB for quick help */}
-      <button className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all z-50">
+      <button className="fixed bottom-5 right-5 sm:bottom-8 sm:right-8 w-12 h-12 sm:w-14 sm:h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all z-50">
         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>help</span>
       </button>
 
       {uploadError && (
-        <div className="fixed bottom-24 right-8 p-4 bg-error-container text-error rounded-lg flex items-center gap-3 shadow-lg z-50">
+        <div className="fixed bottom-20 right-4 sm:bottom-24 sm:right-8 p-4 bg-error-container text-error rounded-lg flex items-center gap-3 shadow-lg z-50 max-w-[calc(100vw-2rem)] sm:max-w-none">
           <span className="material-symbols-outlined">error</span>
           <p className="text-sm">{uploadError}</p>
         </div>

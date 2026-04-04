@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,27 +34,23 @@ export default function AdminSchedulePage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/admin' }, { label: 'Lịch bảo vệ' }]}
       notifications={5}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Lịch Bảo Vệ Khóa Luận
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý lịch bảo vệ khóa luận tốt nghiệp
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-primary-fixed text-primary">
-            <span className="material-symbols-outlined text-sm mr-2">download</span>
-            Xuất lịch
-          </Button>
-          <Button className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary">
-            <span className="material-symbols-outlined text-sm mr-2">add</span>
-            Xếp lịch mới
-          </Button>
-        </div>
-      </div>
+      <FlowPageIntro
+        eyebrow="Admin flow / defense schedule"
+        title="Lịch bảo vệ khóa luận"
+        description="Quản lý lịch bảo vệ khóa luận tốt nghiệp với bố cục mở đầu đồng nhất và nhấn mạnh các hành động chính hơn."
+        actions={
+          <>
+            <Button variant="outline" className="bg-white/80 border-outline-variant/40">
+              <span className="material-symbols-outlined text-sm mr-2">download</span>
+              Xuất lịch
+            </Button>
+            <Button>
+              <span className="material-symbols-outlined text-sm mr-2">add</span>
+              Xếp lịch mới
+            </Button>
+          </>
+        }
+      />
 
       {/* Date Selector */}
       <Card className="bg-gradient-to-r from-primary to-primary-container text-white shadow-lg border-none mb-8">

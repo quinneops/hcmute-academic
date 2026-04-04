@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -245,24 +246,17 @@ function LecturerFeedbackPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Góp ý' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Góp Ý Sinh Viên
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Quản lý góp ý đã gửi cho sinh viên
-          </p>
-        </div>
-        <Button
-          className="bg-primary hover:bg-primary/90 text-white shadow-glow-primary"
-          onClick={() => setIsComposing(!isComposing)}
-        >
-          <span className="material-symbols-outlined text-sm mr-2">{isComposing ? 'close' : 'edit'}</span>
-          {isComposing ? 'Hủy' : 'Viết góp ý mới'}
-        </Button>
-      </div>
+      <FlowPageIntro
+        eyebrow="Lecturer / feedback"
+        title="Góp ý sinh viên"
+        description="Quản lý các góp ý đã gửi, tạo phản hồi mới và giữ toàn bộ trao đổi trong một bố cục đồng nhất hơn."
+        actions={
+          <Button onClick={() => setIsComposing(!isComposing)}>
+            <span className="material-symbols-outlined text-sm mr-2">{isComposing ? 'close' : 'edit'}</span>
+            {isComposing ? 'Hủy' : 'Viết góp ý mới'}
+          </Button>
+        }
+      />
 
       {error && (
         <div className="mb-6 p-4 bg-error/10 border border-error rounded-lg text-error">

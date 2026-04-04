@@ -93,7 +93,7 @@ const config = {
       fontFamily: {
         headline: ["Be Vietnam Pro", "var(--font-be-vietnam-pro)", "sans-serif"],
         body: ["Inter", "var(--font-inter)", "sans-serif"],
-        label: ["Inter", "var(--font-inter)", "sans-serif"],
+        label: ["Be Vietnam Pro", "var(--font-be-vietnam-pro)", "sans-serif"],
       },
       fontSize: {
         "display-sm": ["2.25rem", { letterSpacing: "-0.02em", fontWeight: "800" }],

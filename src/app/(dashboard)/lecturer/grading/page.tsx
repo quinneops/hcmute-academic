@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { FlowPageIntro } from '@/components/flow/FlowPageIntro'
 import { Shell } from '@/components/layout/Shell'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -402,25 +403,21 @@ function LecturerGradingPage() {
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Chấm điểm' }]}
       notifications={0}
     >
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-display-sm font-headline font-extrabold text-primary tracking-tight">
-            Chấm Điểm Sản Phẩm
-          </h2>
-          <p className="text-body-md text-on-surface-variant font-medium">
-            Đánh giá và chấm điểm sản phẩm sinh viên nộp
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Badge className="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">
-            {pendingSubmissions.length} Chờ chấm
-          </Badge>
-          <Badge className="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase">
-            {gradedSubmissions.length} Đã chấm
-          </Badge>
-        </div>
-      </div>
+      <FlowPageIntro
+        eyebrow="Lecturer flow / grading"
+        title="Chấm điểm sản phẩm"
+        description="Đánh giá và chấm điểm sản phẩm sinh viên nộp trong một giao diện cân bằng hơn giữa nội dung và hành động."
+        meta={
+          <>
+            <Badge className="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">
+              {pendingSubmissions.length} chờ chấm
+            </Badge>
+            <Badge className="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase">
+              {gradedSubmissions.length} đã chấm
+            </Badge>
+          </>
+        }
+      />
 
       {error && (
         <div className="mb-6 p-4 bg-error/10 border border-error rounded-lg text-error">

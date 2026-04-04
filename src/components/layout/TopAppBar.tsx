@@ -24,6 +24,7 @@ interface TopAppBarProps {
     avatar?: string
   }
   onSearch?: (query: string) => void
+  onMenuClick?: () => void
   notifications?: number
   className?: string
 }
@@ -33,6 +34,7 @@ export function TopAppBar({
   breadcrumb,
   user,
   onSearch,
+  onMenuClick,
   notifications = 0,
   className,
 }: TopAppBarProps) {
@@ -60,11 +62,21 @@ export function TopAppBar({
       "sticky top-0 w-full z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/15 shadow-ambient-sm",
       className
     )}>
-      <div className="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8 py-3 sm:py-4 max-w-7xl mx-auto gap-3">
         {/* Left: Breadcrumb */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={onMenuClick}
+            aria-label="Mở menu điều hướng"
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </Button>
+
           {breadcrumb && breadcrumb.length > 0 && (
-            <nav className="flex items-center gap-2 text-sm text-secondary">
+            <nav className="hidden sm:flex items-center gap-2 text-sm text-secondary min-w-0">
               {breadcrumb.map((item, index) => (
                 <React.Fragment key={item.label}>
                   {index > 0 && (
@@ -86,10 +98,16 @@ export function TopAppBar({
               ))}
             </nav>
           )}
+
+          {breadcrumb && breadcrumb.length > 0 && (
+            <p className="sm:hidden text-sm font-semibold text-primary truncate">
+              {breadcrumb[breadcrumb.length - 1]?.label}
+            </p>
+          )}
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
           {/* Search */}
           {onSearch && (
             <div className="relative hidden md:block">
@@ -115,7 +133,7 @@ export function TopAppBar({
           </Button>
 
           {/* Help */}
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
             <span className="material-symbols-outlined">help_outline</span>
           </Button>
 
