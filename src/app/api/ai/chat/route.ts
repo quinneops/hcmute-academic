@@ -72,7 +72,7 @@ export async function POST(req: Request) {
 
     // Start streaming text
     const result = await streamText({
-      model: groqProvider('llama-3.3-70b-versatile'), // High capability model on Groq
+      model: groqProvider('llama-3.3-70b-versatile') as any, // High capability model on Groq
       system: systemPrompt,
       messages,
       tools: {
@@ -162,7 +162,7 @@ export async function POST(req: Request) {
             return { students: data };
           },
         })
-      }
+      } as any
     });
 
     return result.toAIStreamResponse();

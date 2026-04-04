@@ -57,13 +57,16 @@ export default function GradingGridPage() {
       const supabase = createClient()
       const { data: registrations, error } = await supabase
         .from('registrations')
-        .select('*')
+        .select(`
+          *,
+          submissions:submissions(*)
+        `)
         .or(`proposal_supervisor_id.eq.${user.id},reviewer_id.eq.${user.id}`)
 
       if (error) throw error
 
       const rows: GradingRow[] = []
-      ;(registrations || []).forEach(reg => {
+      ;(registrations as any[] || []).forEach((reg: any) => {
         const submissions = reg.submissions || []
         submissions.forEach((sub: any) => {
           if (sub.status === 'submitted') {

@@ -219,6 +219,11 @@ export const api = {
           method: 'POST',
           body: { registration_ids: registrationIds, action, notes },
         }),
+      bulkReview: (action: 'approve') =>
+        request<any>(`/lecturer/proposals/bulk-review`, {
+          method: 'POST',
+          body: { action },
+        }),
       delete: (id: string) =>
         request<any>(`/lecturer/proposals/${id}`, { method: 'DELETE' }),
     },

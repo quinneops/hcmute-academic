@@ -21,7 +21,6 @@ export interface UserProfile {
   department: string | null
   faculty: string | null
   is_active: boolean
-  is_tbm: boolean
   is_secretary: boolean
 }
 
@@ -71,7 +70,6 @@ export function useAuthUser() {
         department: profile.department,
         faculty: profile.faculty,
         is_active: profile.is_active,
-        is_tbm: !!profile.is_tbm,
         is_secretary: !!profile.is_secretary,
       })
     } catch (err: any) {

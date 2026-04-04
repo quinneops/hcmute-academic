@@ -39,7 +39,6 @@ export interface Profile {
   faculty: string | null
   phone: string | null
   is_active: boolean
-  is_tbm: boolean
   is_secretary: boolean
   last_login_at: string | null
   created_at: string
