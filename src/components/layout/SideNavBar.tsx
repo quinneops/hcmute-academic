@@ -33,7 +33,7 @@ const studentNavItems: NavItem[] = [
   // { icon: 'folder_open', label: 'Tài liệu', href: '/student/documents' },
   { icon: 'forum', label: 'Phản hồi', href: '/student/feedback' },
   { icon: 'calendar_month', label: 'Lịch hẹn', href: '/student/appointments' },
-  { icon: 'auto_awesome', label: 'Trợ lý AI', href: '/student/ai' },
+  // { icon: 'auto_awesome', label: 'Trợ lý AI', href: '/student/ai' },
   { icon: 'notifications', label: 'Thông báo', href: '/student/notifications' },
 ];
 

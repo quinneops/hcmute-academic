@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { withLecturer } from '@/hocs/with-role-check'
 import { useAuthUser } from '@/hooks/use-auth-user'
 import { createClient } from '@/lib/supabase/client'
+import Papa from 'papaparse'
 
 interface Submission {
   id: string
@@ -82,28 +83,49 @@ const GRADING_CRITERIA: Criteria[] = [
     name: 'Nội dung (Content)',
     sub: 'Chất lượng & Chi tiết',
     key: 'content',
-    maxScore: 4.5,
+    maxScore: 4.0,
     levels: {
       'yếu': { score: '0.6 - 1.5', text: 'Nội dung sơ sài, chưa giải quyết được mục tiêu đề tài.' },
       'trung_binh': { score: '1.6 - 2.5', text: 'Nội dung đầy đủ nhưng chưa sâu, còn sai sót nhỏ.' },
       'kha': { score: '2.6 - 3.5', text: 'Nội dung tốt, giải quyết tốt các mục tiêu đề ra.' },
-      'gioi': { score: '3.6 - 4.5', text: 'Nội dung xuất sắc, có tính mới hoặc ứng dụng cao.' }
+      'gioi': { score: '3.6 - 4.0', text: 'Nội dung xuất sắc, có tính mới hoặc ứng dụng cao.' }
     }
   },
   {
     name: 'Trả lời câu hỏi (Q&A)',
     sub: 'Bản lĩnh & Kiến thức',
     key: 'qa',
-    maxScore: 2.5,
+    maxScore: 2.0,
     levels: {
-      'yếu': { score: '0 - 1.0', text: 'Không trả lời được các câu hỏi của Hội đồng.' },
-      'trung_binh': { score: '1.1 - 1.5', text: 'Trả lời được một phần, còn lúng túng.' },
-      'kha': { score: '1.6 - 2.0', text: 'Trả lời rõ ràng, đúng trọng tâm phần lớn câu hỏi.' },
-      'gioi': { score: '2.1 - 2.5', text: 'Trả lời xuất sắc, bản lĩnh, thuyết phục hoàn toàn.' }
+      'yếu': { score: '0 - 0.8', text: 'Không trả lời được các câu hỏi của Hội đồng.' },
+      'trung_binh': { score: '0.9 - 1.2', text: 'Trả lời được một phần, còn lúng túng.' },
+      'kha': { score: '1.3 - 1.7', text: 'Trả lời rõ ràng, đúng trọng tâm phần lớn câu hỏi.' },
+      'gioi': { score: '1.8 - 2.0', text: 'Trả lời xuất sắc, bản lĩnh, thuyết phục hoàn toàn.' }
+    }
+  },
+  {
+    name: 'Tính sáng tạo',
+    sub: 'Tính mới & Giải pháp',
+    key: 'innovation',
+    maxScore: 1.0,
+    levels: {
+      'yếu': { score: '0.2', text: 'Giải pháp cũ, không có tính mới.' },
+      'trung_binh': { score: '0.5', text: 'Có nỗ lực cải tiến nhưng chưa rõ nét.' },
+      'kha': { score: '0.8', text: 'Có tính mới và giải pháp sáng tạo.' },
+      'gioi': { score: '1.0', text: 'Rất sáng tạo, có giá trị khoa học/thực tiễn cao.' }
+    }
+  },
+  {
+    name: 'Điểm cộng',
+    sub: 'Tiếng Anh (Max 1) + Bài báo (Max 1)',
+    key: 'bonus',
+    maxScore: 2.0,
+    levels: {
+      'khong': { score: '0', text: 'Không có điểm cộng.' },
+      'co': { score: '1.0 - 2.0', text: 'Có viết bằng tiếng Anh hoặc có bài báo khoa học.' }
     }
   }
 ]
-
 function LecturerGradingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -148,6 +170,76 @@ function LecturerGradingPage() {
     recommendations: string[]
   } | null>(null)
   const [isCheckingPlagiarism, setIsCheckingPlagiarism] = React.useState(false)
+  const [isSyncingSpreadsheet, setIsSyncingSpreadsheet] = React.useState(false)
+  const [syncResult, setSyncResult] = React.useState<{ success: number, failed: number } | null>(null)
+  const [spreadsheetUrl, setSpreadsheetUrl] = React.useState<string | null>(null)
+  const [isCreatingSheet, setIsCreatingSheet] = React.useState(false)
+
+  const handleCreateGoogleSheet = async () => {
+    setIsCreatingSheet(true)
+    setError(null)
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/lecturer/grades/spreadsheet-sync', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}` 
+        },
+        body: JSON.stringify({ action: 'create-link' })
+      })
+
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to create sheet')
+      
+      setSpreadsheetUrl(data.spreadsheetUrl)
+      localStorage.setItem(`spreadsheetId_${user?.id}`, data.spreadsheetId)
+      setSuccess(true)
+    } catch (err: any) {
+      setError(err.message || 'Lỗi khi tạo Google Sheet')
+    } finally {
+      setIsCreatingSheet(false)
+    }
+  }
+
+  const handleSyncFromGoogleSheet = async () => {
+    const spreadsheetId = localStorage.getItem(`spreadsheetId_${user?.id}`)
+    if (!spreadsheetId) {
+      setError('Không tìm thấy ID bảng tính. Vui lòng tạo lại.')
+      return
+    }
+
+    setIsSyncingSpreadsheet(true)
+    setError(null)
+    setSyncResult(null)
+
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch('/api/lecturer/grades/spreadsheet-sync', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}` 
+        },
+        body: JSON.stringify({ spreadsheetId })
+      })
+
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Sync failed')
+      
+      setSyncResult(data.summary)
+      setSuccess(true)
+      await fetchSubmissions()
+    } catch (err: any) {
+      setError(err.message || 'Lỗi khi đồng bộ từ Google Sheet')
+    } finally {
+      setIsSyncingSpreadsheet(false)
+    }
+  }
 
   const fetchSubmissions = React.useCallback(async () => {
     try {
@@ -211,7 +303,7 @@ function LecturerGradingPage() {
 
   const calculateTotal = React.useMemo(() => {
     const sum = Object.values(scores).reduce((acc, val) => acc + (parseFloat(val) || 0), 0)
-    return Math.min(10, Math.max(0, sum)).toFixed(1)
+    return Math.min(12, Math.max(0, sum)).toFixed(1)
   }, [scores])
 
   const handleScoreChange = (key: string, value: string) => {
@@ -469,6 +561,74 @@ function LecturerGradingPage() {
     }
   }
 
+  const handleExportSpreadsheet = async () => {
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const response = await fetch('/api/lecturer/grades/spreadsheet-sync', {
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      })
+      if (!response.ok) throw new Error('Failed to export')
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `grading_template_${Date.now()}.csv`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+    } catch (err: any) {
+      setError('Không thể xuất file mẫu')
+    }
+  }
+
+  const handleImportSpreadsheet = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsSyncingSpreadsheet(true)
+    setError(null)
+    setSyncResult(null)
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          const supabase = createClient()
+          const { data: { session } } = await supabase.auth.getSession()
+          
+          const response = await fetch('/api/lecturer/grades/spreadsheet-sync', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session?.access_token}` 
+            },
+            body: JSON.stringify({ csvData: results.data })
+          })
+
+          const data = await response.json()
+          if (!response.ok) throw new Error(data.error || 'Sync failed')
+          
+          setSyncResult(data.summary)
+          if (data.errors && data.errors.length > 0) {
+            console.warn('Sync errors:', data.errors)
+          }
+          await fetchSubmissions()
+        } catch (err: any) {
+          setError(err.message || 'Lỗi khi đồng bộ dữ liệu')
+        } finally {
+          setIsSyncingSpreadsheet(false)
+        }
+      },
+      error: (err) => {
+        setError('Lỗi khi đọc file CSV')
+        setIsSyncingSpreadsheet(false)
+      }
+    })
+  }
+
   if (isLoading) {
     return (
       <Shell role="lecturer" user={{ name: user?.full_name || '...', email: '...', avatar: '' }} breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Chấm điểm' }]}>
@@ -537,6 +697,77 @@ function LecturerGradingPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-2 space-y-2">
+              {/* Spreadsheet Sync Header Button */}
+              <div className="px-2 pb-2">
+                <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100 shadow-sm border p-4 rounded-xl">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-blue-900 uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-base">grid_on</span>
+                        Spreadsheet Workspace
+                      </p>
+                      {syncResult && (
+                        <Badge className="bg-emerald-500 text-white text-[8px] font-black px-1.5 py-0 h-4 border-none">
+                          {syncResult.success} SYNCED
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="w-full h-8 font-black bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95 transition-all text-[9.5px]"
+                        onClick={() => router.push('/lecturer/grading/grid')}
+                      >
+                        <span className="material-symbols-outlined text-sm mr-1.5 text-white/80">launch</span>
+                        OPEN INTERNAL GRID
+                      </Button>
+
+                      <div className="flex items-center gap-2 my-1">
+                        <div className="h-[1px] flex-1 bg-slate-200/50" />
+                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">OR USE CSV</span>
+                        <div className="h-[1px] flex-1 bg-slate-200/50" />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-[9px] h-8 font-black bg-white border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-all shadow-sm"
+                          onClick={handleExportSpreadsheet}
+                        >
+                          <span className="material-symbols-outlined text-sm mr-1">download</span>
+                          EXPORT CSV
+                        </Button>
+                        <label className="block">
+                          <input
+                            type="file"
+                            accept=".csv"
+                            className="hidden"
+                            onChange={handleImportSpreadsheet}
+                            disabled={isSyncingSpreadsheet}
+                          />
+                          <div className={cn(
+                            "w-full h-8 rounded-md border flex items-center justify-center cursor-pointer text-[9px] font-black transition-all shadow-sm",
+                            isSyncingSpreadsheet 
+                              ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+                              : "bg-slate-700 border-transparent text-white hover:bg-slate-800 active:scale-95"
+                          )}>
+                             <span className="material-symbols-outlined text-sm mr-1">upload</span>
+                             SYNC CSV
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <p className="text-[8px] text-slate-400 font-medium leading-tight italic">
+                      Generate a pre-filled template to grade students offline and sync back.
+                    </p>
+                  </div>
+                </Card>
+              </div>
+
               {pendingSubmissions.length === 0 && gradedSubmissions.length === 0 ? (
                 <div className="text-center py-8 text-slate-400">
                   <span className="material-symbols-outlined text-2xl mb-1 opacity-20">check_circle</span>

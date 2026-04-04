@@ -103,6 +103,21 @@ export const api = {
       chat: (messages: { role: 'user' | 'assistant' | 'system', content: string }[]) =>
         request<any>(`/ai/assistant`, { method: 'POST', body: { messages } }),
     },
+    generateTopics: (keywords: string, type?: string) =>
+      request<any>(`/ai/topic-generate`, {
+        method: 'POST',
+        body: { keywords, type }
+      }),
+    improveMotivation: (proposalId: string, studentId: string, motivation: string) =>
+      request<any>(`/ai/motivation-assist`, {
+        method: 'POST',
+        body: { proposal_id: proposalId, student_id: studentId, motivation }
+      }),
+    screenRegistration: (registrationId: string) =>
+      request<any>(`/ai/registration-screen`, {
+        method: 'POST',
+        body: { registration_id: registrationId }
+      }),
   },
 
   // Submissions
@@ -142,6 +157,16 @@ export const api = {
 
     markAsRead: (id: string) =>
       request<any>(`/notifications`, { method: 'POST', params: { id } }),
+  },
+
+  // Feedback
+  feedback: {
+    list: (studentId: string) =>
+      request<any[]>(`/feedback`, { params: { student_id: studentId } }),
+    send: (data: any) =>
+      request<any>(`/feedback`, { method: 'POST', body: data }),
+    markAsRead: (id: string) =>
+      request<any>(`/feedback/mark-as-read`, { method: 'POST', body: { id } }),
   },
 
   // Lecturer Dashboard
@@ -343,23 +368,5 @@ export const api = {
       grades: () =>
         request<any>(`/admin/reports/grades`),
     },
-  },
-
-  ai: {
-    generateTopics: (keywords: string, type?: string) =>
-      request<any>(`/ai/topic-generate`, {
-        method: 'POST',
-        body: { keywords, type }
-      }),
-    improveMotivation: (proposalId: string, studentId: string, motivation: string) =>
-      request<any>(`/ai/motivation-assist`, {
-        method: 'POST',
-        body: { proposal_id: proposalId, student_id: studentId, motivation }
-      }),
-    screenRegistration: (registrationId: string) =>
-      request<any>(`/ai/registration-screen`, {
-        method: 'POST',
-        body: { registration_id: registrationId }
-      }),
   },
 }
