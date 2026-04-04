@@ -37,7 +37,13 @@ function LecturerAppointmentsPage() {
   return (
     <Shell
       role="lecturer"
-      user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
+      user={{
+        name: user?.full_name || 'Giảng viên',
+        email: user?.email || '...',
+        avatar: user?.avatar_url || '',
+        is_tbm: user?.is_tbm,
+        is_secretary: user?.is_secretary
+      }}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Lịch hẹn' }]}
     >
       <div className="mb-8">

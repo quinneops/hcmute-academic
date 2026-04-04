@@ -65,7 +65,7 @@ function LecturerStudentsPage() {
 
   if (isLoading) {
     return (
-      <Shell role="lecturer" user={{ name: '...', email: '...', avatar: '' }} breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Sinh viên' }]}>
+      <Shell role="lecturer" user={{ name: '...', email: '...', avatar: '', is_tbm: false, is_secretary: false }} breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Sinh viên' }]}>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -76,7 +76,13 @@ function LecturerStudentsPage() {
   return (
     <Shell
       role="lecturer"
-      user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
+      user={{
+        name: user?.full_name || 'Giảng viên',
+        email: user?.email || '...',
+        avatar: user?.avatar_url || '',
+        is_tbm: user?.is_tbm,
+        is_secretary: user?.is_secretary
+      }}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Sinh viên' }]}
       notifications={0}
     >

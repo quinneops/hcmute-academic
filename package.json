@@ -35,6 +35,7 @@
     "react": "^18.2.0",
     "react-calendar": "^6.0.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
     "resend": "^6.10.0",
     "tailwind-merge": "^2.2.0",
     "tailwind-variants": "^0.1.0",

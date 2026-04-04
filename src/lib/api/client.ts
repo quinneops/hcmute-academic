@@ -97,16 +97,12 @@ export const api = {
       request<any[]>(`/documents`, { params: { student_id: studentId, category } }),
   },
 
-  // Feedback
-  feedback: {
-    list: (studentId: string) =>
-      request<any[]>(`/feedback`, { params: { student_id: studentId } }),
-
-    send: (data: any) =>
-      request<any>(`/feedback`, { method: 'POST', body: data }),
-
-    markAsRead: (id: string) =>
-      request<any>(`/notifications`, { method: 'POST', params: { id } }),
+  // AI Assistant
+  ai: {
+    assistant: {
+      chat: (messages: { role: 'user' | 'assistant' | 'system', content: string }[]) =>
+        request<any>(`/ai/assistant`, { method: 'POST', body: { messages } }),
+    },
   },
 
   // Submissions

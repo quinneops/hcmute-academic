@@ -11,6 +11,8 @@ interface ShellProps {
     name: string
     email: string
     avatar?: string
+    is_tbm?: boolean
+    is_secretary?: boolean
   }
   pageTitle?: string
   breadcrumb?: { label: string; href?: string }[]
@@ -61,6 +63,8 @@ export function Shell({
         role={role}
         userName={user?.name}
         userAvatar={user?.avatar}
+        is_tbm={user?.is_tbm}
+        is_secretary={user?.is_secretary}
       />
 
       {/* Mobile Side Navigation */}
@@ -68,6 +72,8 @@ export function Shell({
         role={role}
         userName={user?.name}
         userAvatar={user?.avatar}
+        is_tbm={user?.is_tbm}
+        is_secretary={user?.is_secretary}
         mobile
         isOpen={mobileNavOpen}
         onClose={() => setMobileNavOpen(false)}

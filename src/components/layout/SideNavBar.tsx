@@ -16,6 +16,8 @@ interface SideNavBarProps {
   role: 'student' | 'lecturer' | 'admin'
   userName?: string
   userAvatar?: string
+  is_tbm?: boolean
+  is_secretary?: boolean
   onLogout?: () => void
   mobile?: boolean
   isOpen?: boolean
@@ -37,12 +39,19 @@ const studentNavItems: NavItem[] = [
 const lecturerNavItems: NavItem[] = [
   { icon: 'dashboard', label: 'Bảng điều khiển', href: '/lecturer' },
   { icon: 'groups', label: 'Sinh viên', href: '/lecturer/students' },
+  { icon: 'description', label: 'Đề cương', href: '/lecturer/proposals' },
+  { icon: 'gavel', label: 'Chủ tịch', href: '/lecturer/chair' },
+  { icon: 'edit_note', label: 'Thư ký', href: '/lecturer/secretary' },
+  { icon: 'assignment', label: 'Gợi ý đề tài', href: '/lecturer/proposals' },
   { icon: 'grading', label: 'Chấm điểm', href: '/lecturer/grading' },
-  { icon: 'assignment', label: 'Đề tài', href: '/lecturer/proposals' },
-  { icon: 'event', label: 'Lịch bảo vệ', href: '/lecturer/schedule' },
   { icon: 'forum', label: 'Phản hồi', href: '/lecturer/feedback' },
-  { icon: 'calendar_month', label: 'Lịch hẹn', href: '/lecturer/appointments' },
-  { icon: 'auto_awesome', label: 'Trợ lý AI', href: '/lecturer/ai' },
+];
+
+const tbmNavItems: NavItem[] = [
+  { icon: 'fact_check', label: 'Duyệt slot', href: '/lecturer/tbm/slots' },
+  { icon: 'person_add', label: 'Phân công PB', href: '/lecturer/tbm/assign-reviewers' },
+  { icon: 'groups_3', label: 'Phân công HĐ', href: '/lecturer/tbm/assign-councils' },
+  { icon: 'analytics', label: 'Thống kê', href: '/lecturer/tbm/stats' },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -58,6 +67,8 @@ export function SideNavBar({
   role,
   userName,
   userAvatar,
+  is_tbm,
+  is_secretary,
   onLogout,
   mobile = false,
   isOpen = false,
@@ -65,7 +76,7 @@ export function SideNavBar({
 }: SideNavBarProps) {
   const pathname = usePathname()
 
-  const navItems = role === 'student'
+  let navItems = role === 'student'
     ? studentNavItems
     : role === 'lecturer'
     ? lecturerNavItems
@@ -126,6 +137,38 @@ export function SideNavBar({
             </Link>
           )
         })}
+
+        {role === 'lecturer' && is_tbm && (
+          <div className="mt-8 pt-4 border-t border-outline-variant/10">
+            <p className="px-4 text-[10px] font-bold text-secondary uppercase tracking-[0.2em] mb-4">
+              Trưởng bộ môn
+            </p>
+            {tbmNavItems.map((item) => {
+              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => mobile && onClose?.()}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-surface-container-lowest text-primary shadow-ambient-sm font-semibold translate-x-1"
+                      : "text-on-surface-variant hover:bg-surface-container-high hover:text-primary hover:translate-x-0.5"
+                  )}
+                >
+                  <span className="material-symbols-outlined text-base">{item.icon}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && item.badge > 0 && (
+                    <span className="px-2 py-0.5 bg-primary text-on-primary text-[10px] font-bold rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+        )}
       </nav>
 
       {/* User Profile - Link to Profile Page */}
