@@ -15,8 +15,6 @@ import { useRouter } from 'next/navigation'
 export default function ProposalsPage() {
   const router = useRouter()
   const [userId, setUserId] = React.useState<string | null>(null)
-  const [showRegisterDialog, setShowRegisterDialog] = React.useState<string | null>(null)
-  const [motivationLetter, setMotivationLetter] = React.useState('')
   const [pageError, setPageError] = React.useState<string | null>(null)
   const [selectedLecturer, setSelectedLecturer] = React.useState('all')
   const [selectedCategory, setSelectedCategory] = React.useState('all')
@@ -45,6 +43,7 @@ export default function ProposalsPage() {
   const {
     availableProposals,
     myRegistrations,
+    hasCompletedBctt,
     isLoading,
     error,
     isRegistering,
@@ -64,21 +63,8 @@ export default function ProposalsPage() {
         avatar: '',
       }
 
-  const handleRegister = async (proposalId: string) => {
-    if (myRegistrations && myRegistrations.length > 0) {
-      const activeReg = myRegistrations.find(r => r.status === 'pending' || r.status === 'approved')
-      if (activeReg) {
-        setPageError('Bạn chỉ được đăng ký 1 đề tài duy nhất. Bạn đã có đề tài đang đăng ký.')
-        setShowRegisterDialog(null)
-        return
-      }
-    }
-
-    const result = await registerForProposal(proposalId, motivationLetter)
-    if (result.success) {
-      setShowRegisterDialog(null)
-      setMotivationLetter('')
-    }
+  const handleSelectProposal = (proposalId: string) => {
+    router.push(`/student/proposals/${proposalId}/register`)
   }
 
   const handleWithdraw = async (registrationId: string) => {
@@ -163,17 +149,19 @@ export default function ProposalsPage() {
       breadcrumb={[{ label: 'Sinh viên' }, { label: 'Gợi ý đề tài' }]}
       notifications={0}
     >
-      <StudentPageIntro
-        eyebrow="Proposals"
-        title="Khám phá và đăng ký đề tài"
-        description="Tìm đề tài phù hợp, xem gợi ý AI và quản lý lượt đăng ký của bạn trong một trải nghiệm rõ ràng hơn."
-        actions={
-          <Button variant="outline" onClick={handleLoadRecommendations} disabled={isLoadingRecommendations}>
-            <span className="material-symbols-outlined text-sm mr-2">psychology</span>
-            {isLoadingRecommendations ? 'Đang tải gợi ý' : 'Tải gợi ý AI'}
-          </Button>
-        }
-      />
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold font-headline text-primary tracking-tight">Khám phá Đề tài</h2>
+          <p className="text-sm text-on-surface-variant">Chọn một đề tài từ giảng viên hoặc tự đề xuất ý tưởng của bạn.</p>
+        </div>
+        <Button 
+          className="bg-primary text-white font-bold h-11 px-6 shadow-md hover:shadow-lg transition-all"
+          onClick={() => router.push('/student/proposals/create')}
+        >
+          <span className="material-symbols-outlined mr-2">add_circle</span>
+          Tự đề xuất đề tài
+        </Button>
+      </div>
 
       {/* Hero Banners Section */}
       {featuredProposalsList.length > 0 && (
@@ -187,7 +175,7 @@ export default function ProposalsPage() {
                   "relative h-48 rounded-xl overflow-hidden group",
                   !isDisabled && "cursor-pointer"
                 )}
-                onClick={() => !isDisabled && setShowRegisterDialog(proposal.id)}
+                onClick={() => !isDisabled && handleSelectProposal(proposal.id)}
               >
               <div className={cn(
                 "absolute inset-0 opacity-90 transition-opacity group-hover:opacity-100",
@@ -213,9 +201,15 @@ export default function ProposalsPage() {
                   {index === 0 ? 'Nổi bật' : 'Đề tài mới'}
                 </span>
                 <h3 className="text-white text-xl font-bold font-headline mb-2 leading-tight">{proposal.title}</h3>
-                <p className="text-blue-100/80 text-sm">
-                  {proposal.category || 'Đề tài khóa luận'}
-                </p>
+                <div className="flex gap-2 items-center">
+                  <p className="text-blue-100/80 text-sm">
+                    {proposal.category || 'Đề tài khóa luận'}
+                  </p>
+                  <span className="w-1 h-1 bg-blue-100/40 rounded-full"></span>
+                  <span className="text-white/95 text-[10px] font-bold px-2 py-0.5 bg-white/10 rounded uppercase">
+                    {proposal.type}
+                  </span>
+                </div>
               </div>
             </div>
           )})}
@@ -237,7 +231,7 @@ export default function ProposalsPage() {
                 <div
                   key={rec.proposal_id}
                   className="p-4 bg-white rounded-lg border border-purple-100 hover:shadow-md transition-all cursor-pointer"
-                  onClick={() => setShowRegisterDialog(rec.proposal_id)}
+                  onClick={() => handleSelectProposal(rec.proposal_id)}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-sm font-bold text-on-surface flex-1">{rec.title}</h3>
@@ -453,6 +447,19 @@ export default function ProposalsPage() {
                       )}>
                         {isFull ? 'Đã đủ SV' : 'Mở đăng ký'}
                       </Badge>
+                      <Badge variant="outline" className={cn(
+                        proposal.type === 'BCTT' 
+                          ? "border-blue-200 text-blue-700 bg-blue-50"
+                          : "border-primary-fixed text-primary bg-primary-fixed/10"
+                      )}>
+                        {proposal.type}
+                      </Badge>
+                      {proposal.type === 'KLTN' && !hasCompletedBctt && (
+                        <Badge variant="destructive" className="bg-error/10 text-error border-error/20 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[10px]">warning</span>
+                          Yêu cầu hoàn thành BCTT
+                        </Badge>
+                      )}
                       <span className="text-on-surface-variant text-xs font-medium">Mã số: {proposal.id.slice(0, 8)}</span>
                     </div>
                     <h3 className={cn(
@@ -490,7 +497,7 @@ export default function ProposalsPage() {
                           ? "bg-surface-container text-slate-400 cursor-not-allowed"
                           : "bg-secondary-container text-on-secondary-fixed hover:bg-primary-container hover:text-white"
                       )}
-                      onClick={() => !isDisabled && setShowRegisterDialog(proposal.id)}
+                      onClick={() => !isDisabled && handleSelectProposal(proposal.id)}
                       disabled={isDisabled || isRegistering === proposal.id}
                     >
                       {isRegistering === proposal.id ? (
@@ -510,53 +517,6 @@ export default function ProposalsPage() {
           )}
         </div>
       </div>
-
-      {/* Registration Dialog */}
-      {showRegisterDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                <span className="material-symbols-outlined">assignment</span>
-              </div>
-              <h3 className="text-lg font-bold font-headline text-primary">Đăng ký đề tài</h3>
-            </div>
-            <p className="text-sm text-on-surface-variant mb-4">
-              Bạn có chắc chắn muốn đăng ký đề tài này?
-            </p>
-            <textarea
-              className="w-full p-3 border border-outline-variant rounded-lg mb-4 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-              rows={4}
-              placeholder="Thư động lực (tùy chọn)..."
-              value={motivationLetter}
-              onChange={(e) => setMotivationLetter(e.target.value)}
-            />
-            <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto"
-                onClick={() => {
-                  setShowRegisterDialog(null)
-                  setMotivationLetter('')
-                }}
-              >
-                Hủy
-              </Button>
-              <Button
-                className="w-full sm:w-auto bg-primary text-white font-bold"
-                onClick={() => handleRegister(showRegisterDialog)}
-                disabled={isRegistering === showRegisterDialog}
-              >
-                {isRegistering === showRegisterDialog ? (
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  'Xác nhận đăng ký'
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {(pageError || error) && (
         <div className="fixed bottom-4 right-4 p-4 bg-error-container text-error rounded-lg flex items-center gap-3 shadow-lg">

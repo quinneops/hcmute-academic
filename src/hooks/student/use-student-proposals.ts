@@ -12,6 +12,7 @@ export interface Proposal {
   title: string
   description: string | null
   category: string | null
+  type: 'BCTT' | 'KLTN'
   tags: string[]
   supervisor_name: string | null
   max_students: number
@@ -24,6 +25,7 @@ export interface Registration {
   id: string
   proposal_id: string
   proposal_title: string
+  proposal_type: 'BCTT' | 'KLTN'
   proposal_category: string | null
   proposal_tags: string[]
   status: string
@@ -37,6 +39,7 @@ export interface Registration {
 export function useStudentProposals(studentId: string) {
   const [availableProposals, setAvailableProposals] = React.useState<Proposal[]>([])
   const [myRegistrations, setMyRegistrations] = React.useState<Registration[]>([])
+  const [hasCompletedBctt, setHasCompletedBctt] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [isRegistering, setIsRegistering] = React.useState<string | null>(null)
@@ -65,6 +68,7 @@ export function useStudentProposals(studentId: string) {
         title: p.title,
         description: p.description,
         category: p.category,
+        type: (p.type || 'KLTN') as 'BCTT' | 'KLTN',
         tags: p.tags || [],
         supervisor_name: p.supervisor_name || p.supervisor?.full_name,
         max_students: p.max_students,
@@ -74,10 +78,11 @@ export function useStudentProposals(studentId: string) {
       })))
 
       // Set my registrations
-      setMyRegistrations((registrationsData as any[]).map((r: any) => ({
+      const mappedRegistrations = (registrationsData as any[]).map((r: any) => ({
         id: r.id,
         proposal_id: r.proposal_id,
         proposal_title: r.proposal_title,
+        proposal_type: (r.proposal_type || r.proposal?.type || 'KLTN') as 'BCTT' | 'KLTN',
         proposal_category: r.proposal_category || r.proposal?.category,
         proposal_tags: r.proposal_tags || r.proposal?.tags || [],
         status: r.status,
@@ -86,7 +91,15 @@ export function useStudentProposals(studentId: string) {
         supervisor_name: r.supervisor_name || r.proposal?.supervisor?.full_name,
         supervisor_email: r.supervisor_email,
         motivation_letter: r.motivation_letter,
-      })))
+      }))
+
+      setMyRegistrations(mappedRegistrations)
+
+      // Check if student has completed BCTT
+      const hasCompleted = mappedRegistrations.some(
+        r => r.proposal_type === 'BCTT' && (r.status === 'approved' || r.status === 'completed')
+      )
+      setHasCompletedBctt(hasCompleted)
     } catch (err: any) {
       console.error('Proposals fetch error:', err)
       setError(err.message || 'Không thể tải danh sách đề tài')
@@ -163,6 +176,7 @@ export function useStudentProposals(studentId: string) {
   return {
     availableProposals,
     myRegistrations,
+    hasCompletedBctt,
     isLoading,
     error,
     isRegistering,

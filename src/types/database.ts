@@ -16,9 +16,11 @@ export type Json =
 // Enums
 export type UserRole = 'student' | 'lecturer' | 'admin'
 export type ProposalStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'archived'
+export type ProposalType = 'BCTT' | 'KLTN'
 export type RegistrationStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn' | 'completed'
 export type SubmissionStatus = 'submitted' | 'graded' | 'late' | 'resubmitted'
 export type DefenseStatus = 'scheduled' | 'completed' | 'cancelled' | 'postponed'
+export type PostDefenseStatus = 'none' | 'pending_supervisor' | 'pending_chair' | 'approved' | 'rejected'
 export type NotificationType = 'system' | 'academic' | 'deadline' | 'feedback'
 export type CouncilMemberRole = 'chair' | 'secretary' | 'member' | 'opponent1' | 'opponent2'
 
@@ -29,6 +31,8 @@ export interface Profile {
   full_name: string | null
   avatar_url: string | null
   role: UserRole
+  is_tbm: boolean
+  specialization: string | null
   student_code: string | null
   lecturer_code: string | null
   department: string | null
@@ -69,6 +73,8 @@ export interface Proposal {
   co_supervisor_id: string | null
   semester_id: string | null
   status: ProposalStatus
+  type: ProposalType
+  is_open_for_registration: boolean
   max_students: number
   requirements: string | null
   estimated_duration: number | null
@@ -87,6 +93,8 @@ export interface Registration {
   student_id: string
   proposal_id: string
   status: RegistrationStatus
+  post_defense_edit_status: PostDefenseStatus
+  editing_file_url: string | null
   registration_number: string | null
   motivation_letter: string | null
   proposed_title: string | null
@@ -132,6 +140,8 @@ export interface Submission {
   storage_path: string | null
   checksum: string | null
   status: SubmissionStatus
+  turnitin_report_url: string | null
+  internship_confirmation_url: string | null
   submitted_at: string
   late_penalty: number
   graded_at: string | null

@@ -156,6 +156,8 @@ export async function PUT(
       max_students,
       requirements,
       is_industrial,
+      auto_approve,
+      ai_screening_criteria,
     } = body
 
     // Verify ownership
@@ -178,6 +180,8 @@ export async function PUT(
     if (max_students !== undefined) updateData.max_students = max_students
     if (requirements !== undefined) updateData.requirements = requirements
     if (is_industrial !== undefined) updateData.is_industrial = is_industrial
+    if (auto_approve !== undefined) updateData.auto_approve = auto_approve
+    if (ai_screening_criteria !== undefined) updateData.ai_screening_criteria = ai_screening_criteria
 
     const { data: updatedProposal, error: updateError } = await supabaseAdmin
       .from('proposals')

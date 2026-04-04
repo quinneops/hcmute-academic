@@ -16,6 +16,7 @@ export interface Registration {
   reviewed_at: string | null
   review_notes: string | null
   proposal_title: string
+  proposal_type: 'BCTT' | 'KLTN'
   supervisor_name: string | null
   supervisor_email: string | null
   lecturer_code: string | null
@@ -49,6 +50,7 @@ export function useStudentRegistration(studentId: string) {
         reviewed_at: r.reviewed_at,
         review_notes: r.review_notes,
         proposal_title: r.proposal_title,
+        proposal_type: (r.proposal_type || r.proposal?.type || 'KLTN') as 'BCTT' | 'KLTN',
         supervisor_name: r.supervisor_name,
         supervisor_email: r.supervisor_email,
         lecturer_code: r.lecturer_code,

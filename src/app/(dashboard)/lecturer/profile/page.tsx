@@ -136,13 +136,8 @@ function LecturerProfilePage() {
   return (
     <Shell
       role="lecturer"
-      user={{
-        name: profile?.full_name || authUser?.full_name || user.name,
-        email: profile?.email || authUser?.email || '',
-        avatar: profile?.avatar_url || authUser?.avatar_url || '',
-        is_tbm: authUser?.is_tbm,
-        is_secretary: authUser?.is_secretary
-      }}
+      isTbm={authUser?.is_tbm}
+      user={user}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Hồ sơ' }]}
       notifications={0}
     >

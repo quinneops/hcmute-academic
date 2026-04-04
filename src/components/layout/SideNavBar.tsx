@@ -14,6 +14,7 @@ interface NavItem {
 
 interface SideNavBarProps {
   role: 'student' | 'lecturer' | 'admin'
+  isTbm?: boolean
   userName?: string
   userAvatar?: string
   is_tbm?: boolean
@@ -38,12 +39,14 @@ const studentNavItems: NavItem[] = [
 
 const lecturerNavItems: NavItem[] = [
   { icon: 'dashboard', label: 'Bảng điều khiển', href: '/lecturer' },
-  { icon: 'groups', label: 'Sinh viên', href: '/lecturer/students' },
-  { icon: 'description', label: 'Đề cương', href: '/lecturer/proposals' },
+  { icon: 'groups', label: 'Hướng dẫn', href: '/lecturer/students' },
+  { icon: 'find_in_page', label: 'Phản biện', href: '/lecturer/review' },
+  { icon: 'diversity_3', label: 'Hội đồng', href: '/lecturer/council' },
   { icon: 'gavel', label: 'Chủ tịch', href: '/lecturer/chair' },
   { icon: 'edit_note', label: 'Thư ký', href: '/lecturer/secretary' },
   { icon: 'assignment', label: 'Gợi ý đề tài', href: '/lecturer/proposals' },
   { icon: 'grading', label: 'Chấm điểm', href: '/lecturer/grading' },
+  // { icon: 'event', label: 'Lịch bảo vệ', href: '/lecturer/schedule' },
   { icon: 'forum', label: 'Phản hồi', href: '/lecturer/feedback' },
 ];
 
@@ -54,6 +57,13 @@ const tbmNavItems: NavItem[] = [
   { icon: 'analytics', label: 'Thống kê', href: '/lecturer/tbm/stats' },
 ];
 
+const tbmNavItems: NavItem[] = [
+  { icon: 'fact_check', label: 'Duyệt slot', href: '/lecturer/tbm/slots' },
+  { icon: 'person_add', label: 'Phân công PB', href: '/lecturer/tbm/assign-reviewers' },
+  { icon: 'groups_3', label: 'Phân công HĐ', href: '/lecturer/tbm/assign-councils' },
+  { icon: 'analytics', label: 'Thống kê', href: '/lecturer/tbm/stats' },
+]
+
 const adminNavItems: NavItem[] = [
   { icon: 'dashboard', label: 'Bảng điều khiển', href: '/admin' },
   { icon: 'people', label: 'Người dùng', href: '/admin/users' },
@@ -63,17 +73,7 @@ const adminNavItems: NavItem[] = [
   { icon: 'assessment', label: 'Báo cáo', href: '/admin/reports' },
 ]
 
-export function SideNavBar({
-  role,
-  userName,
-  userAvatar,
-  is_tbm,
-  is_secretary,
-  onLogout,
-  mobile = false,
-  isOpen = false,
-  onClose,
-}: SideNavBarProps) {
+export function SideNavBar({ role, isTbm, userName, userAvatar, onLogout }: SideNavBarProps) {
   const pathname = usePathname()
 
   let navItems = role === 'student'
@@ -138,18 +138,17 @@ export function SideNavBar({
           )
         })}
 
-        {role === 'lecturer' && is_tbm && (
-          <div className="mt-8 pt-4 border-t border-outline-variant/10">
-            <p className="px-4 text-[10px] font-bold text-secondary uppercase tracking-[0.2em] mb-4">
-              Trưởng bộ môn
-            </p>
+        {role === 'lecturer' && isTbm && (
+          <>
+            <div className="mt-6 mb-2 px-4">
+              <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em]">Bộ môn (TBM)</p>
+            </div>
             {tbmNavItems.map((item) => {
               const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => mobile && onClose?.()}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
                     isActive
@@ -159,15 +158,10 @@ export function SideNavBar({
                 >
                   <span className="material-symbols-outlined text-base">{item.icon}</span>
                   <span className="flex-1">{item.label}</span>
-                  {item.badge && item.badge > 0 && (
-                    <span className="px-2 py-0.5 bg-primary text-on-primary text-[10px] font-bold rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
                 </Link>
               )
             })}
-          </div>
+          </>
         )}
       </nav>
 

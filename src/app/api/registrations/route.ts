@@ -175,40 +175,63 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden - can only register yourself' }, { status: 403 })
     }
 
-    // Check if already registered for ANY proposal (each student can only register 1 proposal)
-    const { data: existingRegistrations } = await supabaseAdmin
-      .from('registrations')
-      .select('id, proposal_id, status')
-      .eq('student_id', student_id)
-      .in('status', ['pending', 'approved'])
-
-    if (existingRegistrations && existingRegistrations.length > 0) {
-      const activeReg = existingRegistrations[0]
-      return NextResponse.json({
-        error: 'Bạn chỉ được đăng ký 1 đề tài duy nhất',
-        detail: `Bạn đã đăng ký đề tài ID ${activeReg.proposal_id} (trạng thái: ${activeReg.status})`,
-        existing_registration_id: activeReg.id,
-        existing_proposal_id: activeReg.proposal_id,
-      }, { status: 409 })
-    }
-
-    // Get student profile for denormalization
+    // Get student profile for denormalization and verification
     const { data: studentProfile } = await supabaseAdmin
       .from('profiles')
       .select('full_name, email, student_code')
       .eq('id', student_id)
       .single()
 
-    // Get proposal info for denormalization
+    // Get proposal info for denormalization and auto-approve check
     const { data: proposal } = await supabaseAdmin
       .from('proposals')
-      .select('title, supervisor_id, supervisor_name, supervisor_email, type')
+      .select('title, supervisor_id, supervisor_name, supervisor_email, type, auto_approve, max_students, approved_count, registrations_summary, registrations_count')
       .eq('id', proposal_id)
       .single()
 
     if (!proposal) {
       return NextResponse.json({ error: 'Proposal not found' }, { status: 404 })
     }
+
+    // ENFORCE PREREQUISITE: BCTT -> KLTN
+    if (proposal.type === 'KLTN') {
+      const { data: bcttCheck } = await supabaseAdmin
+        .from('registrations')
+        .select('id, status, proposal_type')
+        .eq('student_id', student_id)
+        .eq('proposal_type', 'BCTT')
+        .eq('status', 'completed')
+        .single()
+
+      if (!bcttCheck) {
+        return NextResponse.json({ 
+          error: 'Điều kiện tiên quyết không thỏa mãn', 
+          detail: 'Bạn phải hoàn thành báo cáo thực tập (BCTT) trước khi đăng ký khóa luận tốt nghiệp (KLTN).' 
+        }, { status: 400 })
+      }
+    }
+
+    // Check if already registered for ANY active proposal of the SAME TYPE
+    const { data: existingActive } = await supabaseAdmin
+      .from('registrations')
+      .select('id, proposal_id, status')
+      .eq('student_id', student_id)
+      .eq('proposal_type', proposal.type)
+      .in('status', ['pending', 'approved', 'active'])
+
+    if (existingActive && existingActive.length > 0) {
+      const activeReg = existingActive[0]
+      return NextResponse.json({
+        error: `Bạn đã có đăng ký ${proposal.type} đang hoạt động`,
+        detail: `Bạn đã đăng ký đề tài ID ${activeReg.proposal_id} (trạng thái: ${activeReg.status})`,
+        existing_registration_id: activeReg.id,
+      }, { status: 409 })
+    }
+
+    // Determine initial status based on auto_approve setting
+    const canAutoApprove = proposal.auto_approve && (proposal.approved_count || 0) < (proposal.max_students || 1)
+    const initialStatus = canAutoApprove ? 'approved' : 'pending'
+    const now = new Date().toISOString()
 
     // Create registration (data is denormalized - no FK needed)
     const { data: registration, error: insertError } = await supabaseAdmin
@@ -221,9 +244,12 @@ export async function POST(request: Request) {
         proposal_id,
         proposal_title: proposal.title,
         proposal_supervisor_id: proposal.supervisor_id,
+        proposal_type: proposal.type, // Ensure type is tracked
         motivation_letter,
         proposed_title,
-        status: 'pending',
+        status: initialStatus,
+        approved_at: initialStatus === 'approved' ? now : null,
+        reviewed_at: initialStatus === 'approved' ? now : null,
         submissions: [],
         feedback_thread: [],
       })
@@ -233,13 +259,7 @@ export async function POST(request: Request) {
     if (insertError) throw insertError
 
     // Update proposal's registrations_summary
-    const { data: propData } = await supabaseAdmin
-      .from('proposals')
-      .select('registrations_summary, registrations_count')
-      .eq('id', proposal_id)
-      .single()
-
-    const currentSummary = propData?.registrations_summary || []
+    const currentSummary = proposal.registrations_summary || []
     const newSummary = [
       ...currentSummary,
       {
@@ -247,30 +267,26 @@ export async function POST(request: Request) {
         student_id: registration.student_id,
         student_name: registration.student_name,
         student_code: registration.student_code,
-        status: 'pending',
+        status: initialStatus,
         submitted_at: registration.submitted_at,
         motivation_letter,
         proposed_title,
       },
     ]
 
+    const updatePayload: any = {
+      registrations_summary: newSummary,
+      registrations_count: (proposal.registrations_count || 0) + 1,
+    }
+
+    if (initialStatus === 'approved') {
+      updatePayload.approved_count = (proposal.approved_count || 0) + 1
+    }
+
     await supabaseAdmin
       .from('proposals')
-      .update({
-        registrations_summary: newSummary,
-        registrations_count: (propData?.registrations_count || 0) + 1,
-      })
-    // Send Email Notification to Supervisor (Async)
-    if (proposal.supervisor_email) {
-      notifySupervisor(
-        proposal.supervisor_name,
-        proposal.supervisor_email,
-        registration.student_name,
-        registration.student_code || '',
-        proposal.title,
-        proposal.type
-      )
-    }
+      .update(updatePayload)
+      .eq('id', proposal_id)
 
     return NextResponse.json(registration, { status: 201 })
   } catch (error: any) {

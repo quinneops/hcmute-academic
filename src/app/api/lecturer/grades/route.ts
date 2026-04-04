@@ -171,12 +171,14 @@ export async function POST(request: NextRequest) {
       .eq('id', registration_id)
       .single()
 
-    if (!registration || registration.proposal_supervisor_id !== userId) {
+    if (!registration || (registration.proposal_supervisor_id !== userId && registration.reviewer_id !== userId)) {
       return NextResponse.json(
-        { error: 'You can only grade your own students\' submissions' },
+        { error: 'You can only grade your own students\' submissions or students you are reviewing' },
         { status: 403 }
       )
     }
+
+    const role = registration.proposal_supervisor_id === userId ? 'supervisor' : 'reviewer'
 
     // Get lecturer profile for denormalization
     const { data: lecturerProfile } = await supabaseAdmin
@@ -203,7 +205,7 @@ export async function POST(request: NextRequest) {
       id: existingGradeIndex >= 0 ? grades[existingGradeIndex].id : `grade-${Date.now()}`,
       grader_id: userId,
       grader_name: lecturerProfile?.full_name || '',
-      grader_role: 'supervisor',
+      grader_role: role,
       criteria_scores: criteria_scores || {},
       total_score,
       feedback,
@@ -226,9 +228,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Update registration with new submissions array
+    const updatePayload: any = { submissions }
+    if (role === 'reviewer') {
+      updatePayload.reviewer_score = total_score
+      updatePayload.reviewer_feedback = feedback
+      updatePayload.reviewer_submitted_at = new Date().toISOString()
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('registrations')
-      .update({ submissions })
+      .update(updatePayload)
       .eq('id', registration_id)
 
     if (updateError) {
@@ -284,7 +293,7 @@ export async function PATCH(request: NextRequest) {
       .eq('id', registration_id)
       .single()
 
-    if (!registration || registration.proposal_supervisor_id !== userId) {
+    if (!registration || (registration.proposal_supervisor_id !== userId && registration.reviewer_id !== userId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -317,9 +326,18 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update registration
+    const updatePayload: any = { submissions }
+    
+    // Auto sync back to the reviewer context
+    if (registration.reviewer_id === userId) {
+      if (total_score !== undefined) updatePayload.reviewer_score = total_score
+      if (feedback !== undefined) updatePayload.reviewer_feedback = feedback
+      updatePayload.reviewer_submitted_at = new Date().toISOString()
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('registrations')
-      .update({ submissions })
+      .update(updatePayload)
       .eq('id', registration_id)
 
     if (updateError) {

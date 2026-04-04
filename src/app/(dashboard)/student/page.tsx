@@ -107,29 +107,32 @@ export default function StudentDashboardPage() {
       breadcrumb={[{ label: 'Sinh viên' }, { label: 'Bảng điều khiển' }]}
       notifications={stats?.unreadNotifications || 0}
     >
-      <StudentPageIntro
-        eyebrow="Student dashboard"
-        title="Tổng quan khóa luận"
-        description="Theo dõi đăng ký, tiến độ thực hiện, phản hồi từ giảng viên và các tài liệu quan trọng trong một trải nghiệm thống nhất hơn."
-        meta={
-          <>
-            <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary shadow-ambient-sm">Năm học 2024-2025</span>
-            <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-secondary shadow-ambient-sm">Học kỳ 2</span>
-          </>
-        }
-        actions={
-          <>
-            <Button
-              variant="outline"
-              className="bg-white/80 border-outline-variant/40"
-              onClick={() => router.push('/student/calendar')}
-            >
-              Xem lịch biểu
-            </Button>
-            <Button onClick={() => router.push('/student/documents')}>Tải hướng dẫn</Button>
-          </>
-        }
-      />
+      {/* Hero Header */}
+      <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
+        <div>
+          <h2 className="text-4xl font-headline font-extrabold text-primary tracking-tight mb-2">
+            Tổng quan {stats?.latestRegistrationType === 'BCTT' ? 'Thực tập (BCTT)' : 'Khóa luận (KLTN)'}
+          </h2>
+          <p className="text-on-surface-variant font-medium">
+            Năm học 2024-2025 • Học kỳ 2
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="px-5 py-2.5 bg-white text-primary border border-primary-fixed font-semibold rounded-lg text-sm hover:bg-surface-container-low transition-all"
+            onClick={() => router.push('/student/calendar')}
+          >
+            Xem lịch biểu
+          </Button>
+          <Button
+            className="px-5 py-2.5 bg-primary text-white font-semibold rounded-lg text-sm hover:shadow-lg hover:shadow-primary/20 transition-all"
+            onClick={() => router.push('/student/documents')}
+          >
+            Tải hướng dẫn
+          </Button>
+        </div>
+      </div>
 
       <StudentMetricGrid
         className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4"
@@ -176,9 +179,22 @@ export default function StudentDashboardPage() {
                 <span className="px-3 py-1 bg-primary-fixed text-primary text-[10px] font-bold rounded uppercase tracking-wider">
                   HK2 2024-2025
                 </span>
+                {stats?.latestRegistrationType && (
+                  <span className={cn(
+                    "px-3 py-1 text-[10px] font-bold rounded uppercase tracking-wider",
+                    stats.latestRegistrationType === 'BCTT' ? "bg-blue-100 text-blue-700" : "bg-primary-fixed/20 text-primary"
+                  )}>
+                    Loại: {stats.latestRegistrationType}
+                  </span>
+                )}
                 {stats?.latestRegistrationStatus === 'approved' && (
                   <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase tracking-wider flex items-center gap-1">
                     <span className="material-symbols-outlined text-[12px]">lock</span> ĐÃ DUYỆT
+                  </span>
+                )}
+                {stats?.latestRegistrationStatus === 'completed' && (
+                  <span className="px-3 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold rounded uppercase tracking-wider flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px]">verified</span> BẢO VỆ THÀNH CÔNG
                   </span>
                 )}
               </div>
@@ -278,11 +294,11 @@ export default function StudentDashboardPage() {
           ) : null}
 
           {/* Thesis Progress Flow */}
-          <Card className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 mb-8">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-10">
-              <h3 className="text-lg font-headline font-bold text-primary">Lộ trình Khóa luận</h3>
+          <Card className="bg-white p-8 rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 mb-8">
+            <div className="flex justify-between items-center mb-10">
+              <h3 className="text-lg font-headline font-bold text-primary">Lộ trình {stats?.latestRegistrationType || 'Khóa luận'}</h3>
               <span className="px-3 py-1 bg-primary-fixed text-primary text-[11px] font-bold rounded-full uppercase tracking-widest">
-                GIAI ĐOẠN HIỆN TẠI: NỘP TÀI LIỆU
+                GIAI ĐOẠN HIỆN TẠI: {thesisProgress.find(s => !s.completed)?.milestone.toUpperCase() || 'HOÀN THÀNH'}
               </span>
             </div>
             <div className="relative overflow-x-auto pb-2">

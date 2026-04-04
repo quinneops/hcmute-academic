@@ -182,25 +182,56 @@ export const api = {
         request<any>(`/lecturer/proposals/${id}`),
       create: (data: any) =>
         request<any>(`/lecturer/proposals`, { method: 'POST', body: data }),
-      review: (proposal_id: string, action: 'approve' | 'reject', reviewNotes?: string, registrationId?: string) =>
-        request<any>(`/lecturer/proposals/${proposal_id}`, {
+      update: (id: string, data: any) =>
+        request<any>(`/lecturer/proposals/${id}`, { method: 'PUT', body: data }),
+      review: (proposalId: string, action: 'approve' | 'reject', reviewNotes?: string, registrationId?: string) =>
+        request<any>(`/lecturer/proposals/${proposalId}`, {
           method: 'PATCH',
           body: { action, review_notes: reviewNotes, registration_id: registrationId },
         }),
-      bulkReview: (action: 'approve') =>
-        request<any>(`/lecturer/proposals/bulk-review`, {
+      batchReview: (registrationIds: string[], action: 'approve' | 'reject', notes?: string) =>
+        request<any>(`/lecturer/proposals/batch-review`, {
           method: 'POST',
-          body: { action },
+          body: { registration_ids: registrationIds, action, notes },
         }),
       delete: (id: string) =>
         request<any>(`/lecturer/proposals/${id}`, { method: 'DELETE' }),
     },
+
+
 
     feedback: {
       list: () =>
         request<any>(`/lecturer/feedback`),
       create: (data: any) =>
         request<any>(`/lecturer/feedback`, { method: 'POST', body: data }),
+    },
+
+    review: {
+      list: () => request<any[]>(`/lecturer/review`),
+      updateGrade: (registrationId: string, data: { score: number; feedback: string }) =>
+        request<any>(`/lecturer/review`, { method: 'PATCH', params: { id: registrationId }, body: data }),
+    },
+
+    council: {
+      list: () => request<any[]>(`/lecturer/council`),
+    },
+
+    chair: {
+      submissions: () => request<any[]>(`/lecturer/chair/submissions`),
+      review: (registrationId: string, data: { action: 'approved' | 'rejected', notes?: string }) =>
+        request<any>(`/lecturer/chair/review`, { method: 'POST', body: { registration_id: registrationId, ...data } }),
+    },
+
+    secretary: {
+      meetings: () => request<any[]>(`/lecturer/secretary/meetings`),
+      submitResults: (councilId: string, results: any[], minutesExcelUrl?: string, meetingDocsUrl?: string) =>
+        request<any>(`/lecturer/secretary/submit-results`, { 
+          method: 'POST', 
+          body: { council_id: councilId, results, minutes_excel_url: minutesExcelUrl, meeting_docs_url: meetingDocsUrl } 
+        }),
+      upload: (formData: FormData) =>
+        request<{ url: string }>(`/lecturer/secretary/upload`, { method: 'POST', body: formData, isFormData: true }),
     },
 
     schedule: () =>
@@ -216,6 +247,33 @@ export const api = {
       delete: (id: string) =>
         request<any>(`/lecturer/appointments/${id}`, { method: 'DELETE' }),
     },
+ 
+    tbm: {
+      lecturers: {
+        list: () => request<any>(`/tbm/lecturers`),
+        updateSlots: (lecturerId: string, data: { bctt_slots: number, kltn_slots: number, specialization?: string }) => 
+          request<any>(`/tbm/lecturers/${lecturerId}/slots`, { method: 'PATCH', body: data }),
+      },
+      assignments: {
+        reviewer: {
+          list: () => request<any[]>(`/tbm/assignments/reviewer`),
+          assign: (registrationId: string, reviewerId: string) => 
+            request<any>(`/tbm/assignments/reviewer`, { method: 'POST', body: { registration_id: registrationId, reviewer_id: reviewerId } }),
+          autoAssign: () => request<any>(`/ai/auto-assign-reviewers`, { method: 'POST' }),
+        },
+        council: (registrationIds: string[], councilId: string) => 
+          request<any>(`/tbm/assignments/council`, { method: 'POST', body: { registration_ids: registrationIds, council_id: councilId } }),
+      },
+      councils: {
+        list: () => request<any>(`/tbm/councils`),
+        create: (data: any) => request<any>(`/tbm/councils`, { method: 'POST', body: data }),
+        update: (id: string, data: any) => request<any>(`/tbm/councils`, { method: 'PATCH', body: { id, ...data } }),
+        autoAssign: () => request<any>(`/ai/auto-assign-councils`, { method: 'POST' }),
+      },
+      reports: {
+        department: () => request<any>(`/tbm/reports/department`),
+      }
+    }
   },
 
   // Student Appointments
@@ -223,6 +281,10 @@ export const api = {
     appointments: {
       list: (params?: { status?: string }) =>
         request<any>(`/student/appointments`, { params }),
+    },
+    proposals: {
+      create: (data: any) =>
+        request<any>(`/student/proposals`, { method: 'POST', body: data }),
     },
   },
 
@@ -281,5 +343,23 @@ export const api = {
       grades: () =>
         request<any>(`/admin/reports/grades`),
     },
+  },
+
+  ai: {
+    generateTopics: (keywords: string, type?: string) =>
+      request<any>(`/ai/topic-generate`, {
+        method: 'POST',
+        body: { keywords, type }
+      }),
+    improveMotivation: (proposalId: string, studentId: string, motivation: string) =>
+      request<any>(`/ai/motivation-assist`, {
+        method: 'POST',
+        body: { proposal_id: proposalId, student_id: studentId, motivation }
+      }),
+    screenRegistration: (registrationId: string) =>
+      request<any>(`/ai/registration-screen`, {
+        method: 'POST',
+        body: { registration_id: registrationId }
+      }),
   },
 }
