@@ -5,6 +5,7 @@
 
 import { Database } from '@/types/database'
 import { getAuthClient } from './client'
+import { getURL } from '../utils'
 
 /**
  * Helper to check if a user is authenticated
@@ -46,7 +47,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `http://localhost:3001/auth/callback`,
+      redirectTo: `${getURL()}/auth/callback`,
       queryParams: {
         access_type: 'offline',
         prompt: 'consent',

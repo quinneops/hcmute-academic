@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn, getURL } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { getAuthClient } from '@/lib/supabase/client'
 
@@ -111,7 +111,7 @@ export function LoginForm() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `http://localhost:3001/auth/callback`,
+          redirectTo: `${getURL()}/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

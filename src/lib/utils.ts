@@ -128,3 +128,26 @@ export function truncate(text: string, length: number): string {
   if (text.length <= length) return text
   return text.slice(0, length) + '...'
 }
+
+/**
+ * Get dynamic base URL for redirects
+ */
+export function getURL() {
+  let url =
+    process?.env?.NEXT_PUBLIC_APP_URL ?? // Custom app URL
+    process?.env?.NEXT_PUBLIC_SITE_URL ?? // Supabase default
+    process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Vercel default
+    'http://localhost:3001'
+
+  // Ensure browser-side dynamic host detection
+  if (typeof window !== 'undefined') {
+    url = window.location.origin
+  }
+
+  // Make sure to include `https://` when not localhost.
+  url = url.includes('http') ? url : `https://${url}`
+  // Remove trailing slash for consistency
+  url = url.endsWith('/') ? url.slice(0, -1) : url
+  
+  return url
+}
