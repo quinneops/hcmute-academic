@@ -23,6 +23,7 @@ interface TopAppBarProps {
     email: string
     avatar?: string
   }
+  role?: 'student' | 'lecturer' | 'admin'
   onSearch?: (query: string) => void
   onMenuClick?: () => void
   notifications?: number
@@ -37,6 +38,7 @@ export function TopAppBar({
   onMenuClick,
   notifications = 0,
   className,
+  role,
 }: TopAppBarProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = React.useState('')
@@ -158,17 +160,9 @@ export function TopAppBar({
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push(role === 'student' ? '/student/profile' : role === 'lecturer' ? '/lecturer/profile' : '/admin/profile')}>
                   <span className="material-symbols-outlined mr-2 text-sm">person</span>
                   Hồ sơ
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <span className="material-symbols-outlined mr-2 text-sm">settings</span>
-                  Cài đặt
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <span className="material-symbols-outlined mr-2 text-sm">help</span>
-                  Hỗ trợ
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-error" onClick={handleLogout}>

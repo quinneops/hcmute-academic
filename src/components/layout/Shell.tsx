@@ -103,6 +103,7 @@ export function Shell({
           onSearch={onSearch}
           onMenuClick={() => setMobileNavOpen(true)}
           notifications={notifications}
+          role={role}
         />
 
         {/* Page Content */}
