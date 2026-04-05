@@ -120,6 +120,7 @@ export async function GET(request: Request) {
         supervisor_name: proposalInfo.supervisor_name || null,
         supervisor_email: proposalInfo.supervisor_email || null,
         lecturer_code: lecturerInfo.lecturer_code || null,
+        proposal_type: reg.proposal_type || proposalInfo.type || 'KLTN',
         // Embedded submissions
         submissions: reg.submissions || [],
         // Embedded feedback
@@ -244,7 +245,7 @@ export async function POST(request: Request) {
         proposal_id,
         proposal_title: proposal.title,
         proposal_supervisor_id: proposal.supervisor_id,
-        proposal_type: proposal.type, // Ensure type is tracked
+        proposal_type: proposal.type || 'KLTN', // Ensure type is tracked with fallback
         motivation_letter,
         proposed_title,
         status: initialStatus,

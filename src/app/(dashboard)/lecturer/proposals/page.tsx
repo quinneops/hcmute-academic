@@ -44,11 +44,17 @@ function LecturerProposalsPage() {
   const [reviewNotes, setReviewNotes] = React.useState('')
   const [showReviewForm, setShowReviewForm] = React.useState(false)
   const [aiScreeningResult, setAiScreeningResult] = React.useState<any>(null)
+  
+  // Title inline editing state
+  const [isEditingTitle, setIsEditingTitle] = React.useState(false)
+  const [editTitleValue, setEditTitleValue] = React.useState('')
 
   React.useEffect(() => {
     setAiScreeningResult(null)
     setReviewNotes('')
     setShowReviewForm(false)
+    setIsEditingTitle(false)
+    setEditTitleValue(selectedProposal?.title || '')
   }, [selectedProposal])
 
   const handleAI_Screening = async () => {
@@ -134,7 +140,13 @@ function LecturerProposalsPage() {
       <Shell 
         role="lecturer" 
         isTbm={user?.is_tbm}
-        user={{ name: '...', email: '...', avatar: '' }} 
+        user={{ 
+          name: '...', 
+          email: '...', 
+          avatar: '',
+          is_tbm: user?.is_tbm,
+          is_secretary: user?.is_secretary
+        }} 
         breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Đề cương' }]}
       >
         <div className="flex items-center justify-center h-64">
@@ -148,7 +160,13 @@ function LecturerProposalsPage() {
     <Shell
       role="lecturer"
       isTbm={user?.is_tbm}
-      user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
+      user={{ 
+        name: user?.full_name || 'Giảng viên', 
+        email: user?.email || '...', 
+        avatar: user?.avatar_url || '',
+        is_tbm: user?.is_tbm,
+        is_secretary: user?.is_secretary
+      }}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Đề cương' }]}
       notifications={0}
     >
@@ -286,28 +304,71 @@ function LecturerProposalsPage() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <CardTitle className="font-headline font-bold text-primary text-xl">
-                        {selectedProposal.title}
-                      </CardTitle>
-                      <Badge className={cn(
-                        selectedProposal.type === 'BCTT' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                      )}>
-                        {selectedProposal.type}
-                      </Badge>
-                      {selectedProposal.created_by && (
-                        <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
-                          <span className="material-symbols-outlined text-[10px] mr-1">campaign</span>
-                          SV tự đề xuất
-                        </Badge>
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      {isEditingTitle ? (
+                        <div className="flex items-center gap-2 w-full md:w-auto flex-1">
+                          <input 
+                            className="bg-slate-50 text-xl font-headline font-bold text-primary border border-primary/20 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-primary/20 w-full"
+                            value={editTitleValue}
+                            onChange={(e) => setEditTitleValue(e.target.value)}
+                            autoFocus
+                            onKeyDown={async (e) => {
+                              if (e.key === 'Enter') {
+                                try {
+                                  setIsUpdating(true)
+                                  await api.lecturer.proposals.update(selectedProposal.id, { title: editTitleValue })
+                                  setIsEditingTitle(false)
+                                  await fetchProposals()
+                                } catch (err: any) {
+                                  setError(err.message || 'Lỗi lưu tên đề tài')
+                                } finally {
+                                  setIsUpdating(false)
+                                }
+                              } else if (e.key === 'Escape') {
+                                setIsEditingTitle(false)
+                                setEditTitleValue(selectedProposal.title)
+                              }
+                            }}
+                          />
+                          <button onClick={() => { setIsEditingTitle(false); setEditTitleValue(selectedProposal.title); }} className="text-slate-400 hover:text-slate-600 transition-colors">
+                            <span className="material-symbols-outlined text-lg">close</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <CardTitle className="font-headline font-bold text-primary text-xl flex items-center gap-2 group">
+                          {selectedProposal.title}
+                          <button 
+                            onClick={() => setIsEditingTitle(true)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-primary p-1 bg-slate-100 rounded-lg"
+                            title="Chỉnh sửa tên đề tài"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">edit</span>
+                          </button>
+                        </CardTitle>
                       )}
-                      <Badge className={cn(
-                        selectedProposal.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                        selectedProposal.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                        'bg-amber-100 text-amber-700'
-                      )}>
-                        {selectedProposal.status === 'approved' ? 'Đã duyệt' : selectedProposal.status === 'rejected' ? 'Từ chối' : 'Chờ duyệt'}
-                      </Badge>
+
+                      {!isEditingTitle && (
+                        <>
+                          <Badge className={cn(
+                            selectedProposal.type === 'BCTT' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                          )}>
+                            {selectedProposal.type}
+                          </Badge>
+                          {selectedProposal.created_by && (
+                            <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
+                              <span className="material-symbols-outlined text-[10px] mr-1">campaign</span>
+                              SV tự đề xuất
+                            </Badge>
+                          )}
+                          <Badge className={cn(
+                            selectedProposal.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                            selectedProposal.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                            'bg-amber-100 text-amber-700'
+                          )}>
+                            {selectedProposal.status === 'approved' ? 'Đã duyệt' : selectedProposal.status === 'rejected' ? 'Từ chối' : 'Chờ duyệt'}
+                          </Badge>
+                        </>
+                      )}
                     </div>
                     <p className="text-sm text-secondary">
                       {selectedProposal.student_name || 'Chưa có sinh viên'} ({selectedProposal.student_code}) • Nộp: {formatDate(selectedProposal.submitted_at)}

@@ -73,6 +73,7 @@ export function Shell({
       {/* Mobile Side Navigation */}
       <SideNavBar
         role={role}
+        isTbm={isTbm}
         userName={user?.name}
         userAvatar={user?.avatar}
         is_tbm={user?.is_tbm}

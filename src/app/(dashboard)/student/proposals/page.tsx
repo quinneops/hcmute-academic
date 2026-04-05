@@ -316,12 +316,14 @@ export default function ProposalsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
                     <Badge className={cn(
-                      reg.status === 'approved' ? 'bg-emerald-500/10 text-emerald-700' :
+                      reg.status === 'completed' ? 'bg-blue-500 text-white shadow-blue-200' :
+                      reg.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
                       reg.status === 'pending' ? 'bg-amber-100 text-amber-700' :
                       reg.status === 'rejected' ? 'bg-error-container text-error' :
                       'bg-slate-100 text-slate-600'
                     )}>
-                      {reg.status === 'approved' ? 'Đã duyệt' :
+                      {reg.status === 'completed' ? 'Đã hoàn thành' :
+                       reg.status === 'approved' ? 'Đã duyệt' :
                        reg.status === 'pending' ? 'Chờ duyệt' :
                        reg.status === 'rejected' ? 'Bị từ chối' : 'Đã hủy'}
                     </Badge>

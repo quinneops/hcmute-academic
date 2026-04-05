@@ -43,7 +43,7 @@ export default function SubmissionsPage() {
     error,
     isUploading,
     uploadSubmission,
-  } = useStudentSubmissions(userId || '')
+  } = useStudentSubmissions(userId || '', currentRegistration?.proposal_type, registrationId)
 
   // Fetch registrations to get registration_id for upload
   React.useEffect(() => {
@@ -52,21 +52,56 @@ export default function SubmissionsPage() {
       try {
         const data = await api.registrations.list(userId)
         if (data && data.length > 0) {
-          setRegistrationId(data[0].id)
-          setCurrentRegistration(data[0])
-          console.log('[Submissions] Got registration:', data[0].id)
+          // 1. First, try to find a registration that is NOT 'completed' or 'rejected'
+          const activeRegistrations = data.filter((r: any) => 
+            !['completed', 'rejected'].includes(r.status)
+          )
+          
+          let selection: any = null
+          
+          if (activeRegistrations.length > 0) {
+            const statusOrder: Record<string, number> = { 
+              'active': 0, 
+              'approved': 1, 
+              'pending': 2, 
+              'completed': 3, 
+              'rejected': 4 
+            }
+            
+            // Pick the most relevant active one (KLTN first, then by status order, then by date)
+            selection = activeRegistrations.sort((a: any, b: any) => {
+              if (a.proposal_type !== b.proposal_type) return a.proposal_type === 'KLTN' ? -1 : 1
+              const orderA = statusOrder[a.status] ?? 99
+              const orderB = statusOrder[b.status] ?? 99
+              if (orderA !== orderB) return orderA - orderB
+              return new Date(b.submitted_at || 0).getTime() - new Date(a.submitted_at || 0).getTime()
+            })[0]
+          } else {
+            // If everything is completed/rejected, just pick the latest overall
+            selection = [...data].sort((a: any, b: any) => 
+              new Date(b.submitted_at || 0).getTime() - new Date(a.submitted_at || 0).getTime()
+            )[0]
+          }
+          
+          setRegistrationId(selection.id)
+          setCurrentRegistration(selection)
+          console.log('[Submissions] Priority Selection:', selection.id, selection.proposal_type, selection.status)
         } else {
-          console.log('[Submissions] No registrations found')
           setRegistrationId(null)
           setCurrentRegistration(null)
         }
       } catch (err: any) {
         console.error('[Submissions] Registration fetch error:', err)
-        setRegistrationId(null)
-        setCurrentRegistration(null)
       }
     }
     fetchRegistration()
+  }, [userId])
+
+  // Get all registrations for the switcher
+  const [allRegistrations, setAllRegistrations] = React.useState<any[]>([])
+  React.useEffect(() => {
+    if (!userId) return
+    api.registrations.list(userId).then(setAllRegistrations).catch(console.error)
   }, [userId])
 
   const user = profile
@@ -104,9 +139,12 @@ export default function SubmissionsPage() {
     })
 
     if (!registrationId) {
+      console.error('[Upload] Cannot proceed: registrationId is missing')
       setUploadError('Chưa có đăng ký khóa luận nào. Vui lòng đăng ký đề tài trước khi nộp bài.')
       return
     }
+
+    console.log('[Upload] Triggering upload with ID:', registrationId)
 
     setIsUploadingMultiple(true)
     let successCount = 0
@@ -115,6 +153,7 @@ export default function SubmissionsPage() {
     // Upload each file sequentially
     for (const file of selectedFiles) {
       try {
+        console.log(`[Upload] Uploading file: ${file.name} for registration: ${registrationId}`)
         const result = await uploadSubmission(file, milestoneType, registrationId)
         if (result.success) {
           successCount++
@@ -214,6 +253,29 @@ export default function SubmissionsPage() {
           }
         />
 
+        {currentRegistration?.status === 'completed' && currentRegistration?.proposal_type === 'BCTT' && (
+          <Card className="mb-8 border-none bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-200">
+            <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-3xl">
+                  <span className="material-symbols-outlined">workspace_premium</span>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black font-headline tracking-tight">Chúc mừng! Bạn đã hoàn thành BCTT</h3>
+                  <p className="text-emerald-50/90 font-medium">Giảng viên đã duyệt báo cáo và đánh giá kết quả của bạn.</p>
+                </div>
+              </div>
+              <Button 
+                className="bg-white text-emerald-700 font-bold hover:bg-emerald-50 px-8 h-12 rounded-full shadow-lg transition-all active:scale-95"
+                onClick={() => router.push('/student/proposals')}
+              >
+                Tiếp tục đăng ký KLTN
+                <span className="material-symbols-outlined ml-2">arrow_forward</span>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
           {/* Progress Timeline (2/3) */}
@@ -278,19 +340,19 @@ export default function SubmissionsPage() {
                             "text-xs font-bold px-2 py-1 rounded-full uppercase",
                             isCompleted && "bg-emerald-50 text-emerald-700",
                             isCurrent && "bg-blue-50 text-blue-700",
-                            isPending && "bg-slate-100 text-slate-500"
+                            isPending && "bg-slate-100 text-slate-500",
+                            currentRegistration?.status === 'completed' && "bg-emerald-600 text-white"
                           )}>
-                            {isCompleted ? 'Hoàn tất' : isCurrent ? 'Đang thực hiện' : 'Đang chờ'}
+                            {currentRegistration?.status === 'completed' ? 'Hoàn thành' : isCompleted ? 'Hoàn tất' : isCurrent ? 'Đang thực hiện' : 'Đang chờ'}
                           </span>
                         </div>
                       </div>
-                      <p className="text-sm text-on-surface-variant">
-                        {milestone.milestone === 'Đề cương' && 'Nộp đề cương nghiên cứu chi tiết.'}
-                        {milestone.milestone === 'Bản nháp' && 'Nộp bản nháp đầu tiên của khóa luận.'}
-                        {milestone.milestone === 'Giữa kỳ' && 'Báo cáo tiến độ giữa kỳ.'}
-                        {milestone.milestone === 'Cuối kỳ' && 'Nộp báo cáo cuối kỳ hoàn chỉnh.'}
-                        {milestone.milestone === 'Slide' && 'Nộp slide bảo vệ khóa luận.'}
-                        {milestone.milestone === 'Bảo vệ' && 'Nộp tài liệu bảo vệ cuối cùng.'}
+                      <p className="text-sm text-on-surface-variant italic">
+                        {milestone.milestone === 'Đề cương & Bản nháp' && '📌 GVHD nhận xét đề cương và bản thảo đầu tiên.'}
+                        {milestone.milestone === 'Báo cáo Giữa kỳ' && '📌 GVHD chấm điểm tiến độ thực hiện & kết quả giữa kỳ.'}
+                        {milestone.milestone === 'Nhận xét Phản biện' && '📌 GVPB chấm điểm và nhận xét phản biện chi tiết.'}
+                        {milestone.milestone === 'Bảo vệ Hội đồng' && '📌 Hội đồng chấm điểm bảo vệ khóa luận cuối cùng.'}
+                        {milestone.milestone === 'Báo cáo Thực tập' && '📌 GVHD chấm báo cáo thực tập cuối khóa.'}
                       </p>
 
                       {/* Upload button for next allowed milestone */}
@@ -301,12 +363,11 @@ export default function SubmissionsPage() {
                             onClick={() => {
                               // Map Vietnamese milestone names to English submission types
                               const milestoneTypeMap: Record<string, string> = {
-                                'Đề cương': 'proposal',
-                                'Bản nháp': 'draft',
-                                'Giữa kỳ': 'interim',
-                                'Cuối kỳ': 'final',
-                                'Slide': 'slide',
-                                'Bảo vệ': 'defense',
+                                'Đề cương & Bản nháp': 'proposal',
+                                'Báo cáo Giữa kỳ': 'interim',
+                                'Nhận xét Phản biện': 'final',
+                                'Bảo vệ Hội đồng': 'defense',
+                                'Báo cáo Thực tập': 'bctt_report',
                               }
                               setMilestoneType(milestoneTypeMap[milestone.milestone] || 'proposal')
                               setShowUploadDialog(true)
@@ -349,6 +410,7 @@ export default function SubmissionsPage() {
                                 'Cuối kỳ': 'final',
                                 'Slide': 'slide',
                                 'Bảo vệ': 'defense',
+                                'Báo cáo Thực tập': 'bctt_report',
                               }
                               return s.submission_type === milestoneTypeMap[milestone.milestone]
                             })
@@ -426,27 +488,6 @@ export default function SubmissionsPage() {
               </div>
             </div>
 
-            {/* Quick Stats Card */}
-            <div className="bg-primary text-on-primary rounded-xl p-6 shadow-xl shadow-primary/20 overflow-hidden relative">
-              {/* Abstract decoration */}
-              <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-              <h3 className="text-white/80 text-[11px] font-bold uppercase tracking-widest mb-4">
-                Thông tin bổ sung
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-xs text-white/60 mb-1">Thời hạn nộp báo cáo cuối</p>
-                  <p className="font-bold text-white">15/12/2025</p>
-                </div>
-                <div className="pt-4 border-t border-white/10">
-                  <p className="text-xs text-white/60 mb-1">Phòng hội đồng dự kiến</p>
-                  <p className="font-bold text-white">A1-402, HCM-UTE</p>
-                </div>
-              </div>
-              <Button className="mt-6 w-full py-2 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-bold transition-colors text-white">
-                Xem lịch chi tiết
-              </Button>
-            </div>
 
             {/* Submissions List - Mini */}
             <Card className="bg-surface-container-lowest shadow-sm">
@@ -536,7 +577,10 @@ export default function SubmissionsPage() {
                 <div className="flex items-start gap-2">
                   <span className="material-symbols-outlined text-blue-600 text-sm">info</span>
                   <p className="text-xs text-blue-800">
-                    Bạn cần nộp theo thứ tự. Sau khi nộp bước <span className="font-bold">{milestoneType}</span> và được chấm, bạn mới có thể nộp bước tiếp theo.
+                    {currentRegistration?.proposal_type === 'BCTT' 
+                      ? "Bạn hãy nộp Báo cáo thực tập và các tài liệu liên quan tại đây."
+                      : `Bạn cần nộp theo thứ tự. Sau khi nộp bước ${milestoneType} và được chấm, bạn mới có thể nộp bước tiếp theo.`
+                    }
                   </p>
                 </div>
               </div>
@@ -551,6 +595,7 @@ export default function SubmissionsPage() {
                     {milestoneType === 'final' && 'Báo cáo cuối kỳ'}
                     {milestoneType === 'slide' && 'Slide bảo vệ'}
                     {milestoneType === 'defense' && 'Tài liệu bảo vệ'}
+                    {milestoneType === 'bctt_report' && 'Báo cáo Thực tập'}
                   </p>
                   <p className="text-xs text-on-surface-variant mt-1">
                     Đây là bước tiếp theo bạn được phép nộp

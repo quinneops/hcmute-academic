@@ -101,7 +101,13 @@ function AIAssistantPage() {
     <Shell
       role="lecturer"
       isTbm={user?.is_tbm}
-      user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
+      user={{ 
+        name: user?.full_name || 'Giảng viên', 
+        email: user?.email || '...', 
+        avatar: user?.avatar_url || '',
+        is_tbm: user?.is_tbm,
+        is_secretary: user?.is_secretary
+      }}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Trợ lý AI' }]}
     >
       <div className="flex flex-col h-[calc(100vh-100px)] gap-4">

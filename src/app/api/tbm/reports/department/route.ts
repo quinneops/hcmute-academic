@@ -43,7 +43,8 @@ export async function GET(request: NextRequest) {
     // 1. Fetch all registrations for current semester
     const { data: registrations, error: regError } = await supabaseAdmin
       .from('registrations')
-      .select('id, student_name, student_code, proposal_type, status, final_score, supervisor_name:reviewed_by_name, reviewer_name')
+      .select('id, student_name, student_code, proposal_type, status, final_score, supervisor_name:reviewed_by_name, reviewer_name, post_defense_edit_status, submissions')
+      .eq('proposal_type', 'KLTN')
       .order('created_at', { ascending: false })
 
     if (regError) throw regError
@@ -68,6 +69,38 @@ export async function GET(request: NextRequest) {
     const scores = registrations.filter(r => r.final_score !== null).map(r => Number(r.final_score))
     const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0
 
+    // Distributions for Charts
+    const grade_distribution = [
+      { range: '0-5', count: scores.filter(s => s < 5).length, color: '#ef4444' },
+      { range: '5-7', count: scores.filter(s => s >= 5 && s < 7).length, color: '#f59e0b' },
+      { range: '7-8.5', count: scores.filter(s => s >= 7 && s < 8.5).length, color: '#3b82f6' },
+      { range: '8.5-10', count: scores.filter(s => s >= 8.5).length, color: '#10b981' }
+    ]
+
+    const workloadMap: Record<string, number> = {}
+    registrations.forEach(r => {
+      const name = r.supervisor_name || 'Hệ thống'
+      workloadMap[name] = (workloadMap[name] || 0) + 1
+    })
+    const lecturer_workload = Object.entries(workloadMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8)
+
+    const roundMap: Record<number, number> = {}
+    registrations.forEach(r => {
+      // Logic: Get the latest submission round
+      const subs = r.submissions || []
+      const latestRound = subs.length > 0 ? Math.max(...subs.map((s: any) => s.round_number)) : 0
+      if (latestRound > 0) {
+        roundMap[latestRound] = (roundMap[latestRound] || 0) + 1
+      }
+    })
+    const round_distribution = [1, 2, 3, 4].map(num => ({
+      round: `Vòng ${num}`,
+      count: roundMap[num] || 0
+    }))
+
     const summary = {
       total: totalStudents,
       bctt: bcttCount,
@@ -76,7 +109,10 @@ export async function GET(request: NextRequest) {
       completed: completedCount,
       failed: failedCount,
       avg_score: avgScore.toFixed(2),
-      lecturer_count: lecturers.length
+      lecturer_count: lecturers.length,
+      grade_distribution,
+      lecturer_workload,
+      round_distribution
     }
 
     return NextResponse.json({

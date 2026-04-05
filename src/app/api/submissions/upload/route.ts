@@ -13,7 +13,8 @@ const supabaseAdmin = createClient(
 )
 
 // Submission type mapping
-const SUBMISSION_TYPES = ['proposal', 'draft', 'interim', 'final', 'slide', 'defense']
+// Submission type mapping
+const SUBMISSION_TYPES = ['proposal', 'interim', 'final', 'defense', 'bctt_report']
 
 // Round number to submission type mapping (1-indexed)
 function getSubmissionTypeFromRound(roundNumber: number): string {
@@ -22,7 +23,11 @@ function getSubmissionTypeFromRound(roundNumber: number): string {
 }
 
 // Get the next required submission type based on existing submissions
-function getNextRequiredType(submissions: any[]): string {
+function getNextRequiredType(submissions: any[], proposalType?: string): string {
+  if (proposalType === 'BCTT') {
+    return 'bctt_report'
+  }
+
   if (!submissions || submissions.length === 0) {
     return 'proposal'
   }
@@ -37,21 +42,35 @@ function getNextRequiredType(submissions: any[]): string {
     return 'proposal'
   }
 
+  const KLTN_TYPES = ['proposal', 'interim', 'final', 'defense']
   const maxGradedRound = Math.max(...gradedTypes)
-  const nextTypeIndex = maxGradedRound % SUBMISSION_TYPES.length
+  const nextTypeIndex = maxGradedRound % KLTN_TYPES.length
 
   // If all rounds completed
-  if (nextTypeIndex >= SUBMISSION_TYPES.length) {
+  if (nextTypeIndex >= KLTN_TYPES.length) {
     return 'defense'
   }
 
-  return SUBMISSION_TYPES[nextTypeIndex]
+  return KLTN_TYPES[nextTypeIndex]
 }
 
 // Validate sequential submission order
 function validateSequentialSubmission(registration: any, submissionType: string) {
   const submissions = registration.submissions || []
-  const nextRequiredType = getNextRequiredType(submissions)
+  const proposalType = registration.proposal_type || 'KLTN'
+  
+  if (proposalType === 'BCTT') {
+    // For BCTT, only bctt_report is allowed, but it can be uploaded anytime
+    if (submissionType !== 'bctt_report') {
+       return {
+         valid: false,
+         error: 'Yêu cầu nộp Báo cáo thực tập (bctt_report)',
+       }
+    }
+    return { valid: true }
+  }
+
+  const nextRequiredType = getNextRequiredType(submissions, proposalType)
 
   // Check if submission type matches required type
   if (submissionType !== nextRequiredType) {
@@ -174,13 +193,16 @@ export async function POST(request: NextRequest) {
 
     // Get submission type order for round_number calculation
     const typeIndex = SUBMISSION_TYPES.indexOf(submission_type)
-    const roundNumber = typeIndex + 1
 
+    // Calculate round number for KLTN / BCTT
+    const roundNumber = registration.proposal_type === 'BCTT' ? 1 : (typeIndex + 1)
+    
     // Create new submission record
     const newSubmission = {
       id: `sub-${Date.now()}`,
       round_id: `round-${roundNumber}`,
       round_number: roundNumber,
+      proposal_type: registration.proposal_type || 'KLTN',
       round_name: `${submission_type.charAt(0).toUpperCase() + submission_type.slice(1)} - Document ${documentNumber}`,
       submission_type: submission_type,
       document_number: documentNumber,

@@ -125,10 +125,16 @@ function LecturerDashboardPage() {
 
   if (isLoading) {
     return (
-      <Shell 
-        role="lecturer" 
-        isTbm={user?.is_tbm} 
-        user={{ name: '...', email: '...', avatar: '' }} 
+      <Shell
+        role="lecturer"
+        isTbm={user?.is_tbm}
+        user={{
+          name: '...',
+          email: '...',
+          avatar: '',
+          is_tbm: user?.is_tbm,
+          is_secretary: user?.is_secretary
+        }}
         breadcrumb={[{ label: 'Bảng điều khiển' }]}
       >
         <div className="flex items-center justify-center h-64">
@@ -142,7 +148,13 @@ function LecturerDashboardPage() {
     <Shell
       role="lecturer"
       isTbm={user?.is_tbm}
-      user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
+      user={{
+        name: user?.full_name || 'Giảng viên',
+        email: user?.email || '...',
+        avatar: user?.avatar_url || '',
+        is_tbm: user?.is_tbm,
+        is_secretary: user?.is_secretary
+      }}
       breadcrumb={[{ label: 'Bảng điều khiển' }]}
       notifications={0}
     >
@@ -224,7 +236,7 @@ function LecturerDashboardPage() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Recent Submissions */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           <Card className="bg-surface-container-lowest shadow-ambient-lg border-none">
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -259,8 +271,8 @@ function LecturerDashboardPage() {
                         <div className={cn(
                           "w-10 h-10 rounded-lg flex items-center justify-center",
                           submission.submission_type.includes('Proposal') ? 'bg-blue-50 text-blue-600' :
-                          submission.submission_type.includes('Round 1') ? 'bg-amber-50 text-amber-600' :
-                          'bg-emerald-50 text-emerald-600'
+                            submission.submission_type.includes('Round 1') ? 'bg-amber-50 text-amber-600' :
+                              'bg-emerald-50 text-emerald-600'
                         )}>
                           <span className="material-symbols-outlined">description</span>
                         </div>
@@ -273,8 +285,8 @@ function LecturerDashboardPage() {
                       <div className="flex items-center gap-3">
                         <Badge className={cn(
                           submission.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
-                          submission.status === 'graded' ? 'bg-emerald-100 text-emerald-700' :
-                          'bg-slate-100 text-slate-600'
+                            submission.status === 'graded' ? 'bg-emerald-100 text-emerald-700' :
+                              'bg-slate-100 text-slate-600'
                         )}>
                           {submission.status === 'submitted' ? 'Chờ xem' : 'Đã chấm'}
                         </Badge>
@@ -291,80 +303,6 @@ function LecturerDashboardPage() {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column - Upcoming Defense */}
-        <div>
-          <Card className="bg-primary text-white shadow-xl shadow-primary/10 relative overflow-hidden h-full">
-            <div className="absolute -right-4 -bottom-4 opacity-10">
-              <span className="material-symbols-outlined text-[120px]">school</span>
-            </div>
-
-            <CardContent className="relative z-10 p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-2xl">event</span>
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm">Bảo vệ khóa luận</h4>
-                  <p className="text-[10px] text-on-primary-container font-medium">Sắp diễn ra</p>
-                </div>
-              </div>
-
-              {upcomingDefenses.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-white/70">Chưa có lịch bảo vệ nào</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {upcomingDefenses.slice(0, 1).map((defense) => (
-                    <div key={defense.id}>
-                      <div>
-                        <p className="text-[10px] font-bold text-on-primary-container uppercase tracking-widest mb-1">
-                          Sinh viên
-                        </p>
-                        <p className="font-bold text-lg">{defense.student_name}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-[10px] font-bold text-on-primary-container uppercase tracking-widest mb-1">
-                          Đề tài
-                        </p>
-                        <p className="text-sm font-medium leading-relaxed">{defense.thesis_title}</p>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-on-primary-container">
-                        <span className="material-symbols-outlined text-sm">schedule</span>
-                        <span className="text-sm font-medium">{formatDateTime(defense.scheduled_at)}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-on-primary-container">
-                        <span className="material-symbols-outlined text-sm">location_on</span>
-                        <span className="text-sm font-medium">{defense.room}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="mt-8 flex gap-3">
-                <Button
-                  className="flex-1 bg-tertiary text-on-tertiary-fixed font-bold"
-                  onClick={() => router.push('/lecturer/grading')}
-                >
-                  <span className="material-symbols-outlined text-sm mr-2">grading</span>
-                  Chấm điểm
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-white/30 text-white hover:bg-white/10"
-                  onClick={() => router.push('/lecturer/schedule')}
-                >
-                  Chi tiết
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </div>
@@ -399,8 +337,8 @@ function LecturerDashboardPage() {
                 <div className={cn(
                   "inline-flex items-center gap-3 px-6 py-4 rounded-lg mb-4",
                   overallHealth === 'good' ? 'bg-emerald-50 text-emerald-700' :
-                  overallHealth === 'concerning' ? 'bg-amber-50 text-amber-700' :
-                  'bg-red-50 text-red-700'
+                    overallHealth === 'concerning' ? 'bg-amber-50 text-amber-700' :
+                      'bg-red-50 text-red-700'
                 )}>
                   <span className="material-symbols-outlined text-2xl">
                     {overallHealth === 'good' ? 'check_circle' : overallHealth === 'concerning' ? 'warning' : 'error'}
@@ -408,13 +346,13 @@ function LecturerDashboardPage() {
                   <div className="text-left">
                     <p className="font-bold text-sm">
                       {overallHealth === 'good' ? 'Tất cả sinh viên đang tiến độ tốt' :
-                       overallHealth === 'concerning' ? 'Có một số mối quan tâm' :
-                       'Cần can thiệp ngay'}
+                        overallHealth === 'concerning' ? 'Có một số mối quan tâm' :
+                          'Cần can thiệp ngay'}
                     </p>
                     <p className="text-xs text-secondary mt-1">
                       {overallHealth === 'good' ? 'Không có sinh viên nào có nguy cơ' :
-                       overallHealth === 'concerning' ? 'Theo sát các sinh viên bên dưới' :
-                       'Liên hệ ngay với sinh viên có nguy cơ cao'}
+                        overallHealth === 'concerning' ? 'Theo sát các sinh viên bên dưới' :
+                          'Liên hệ ngay với sinh viên có nguy cơ cao'}
                     </p>
                   </div>
                 </div>
@@ -432,8 +370,8 @@ function LecturerDashboardPage() {
                     className={cn(
                       "p-6 rounded-lg border-l-4",
                       student.risk_score >= 80 ? 'bg-red-50 border-red-500' :
-                      student.risk_score >= 50 ? 'bg-amber-50 border-amber-500' :
-                      'bg-blue-50 border-blue-500'
+                        student.risk_score >= 50 ? 'bg-amber-50 border-amber-500' :
+                          'bg-blue-50 border-blue-500'
                     )}
                   >
                     <div className="flex justify-between items-start mb-3">
@@ -443,8 +381,8 @@ function LecturerDashboardPage() {
                       </div>
                       <Badge className={cn(
                         student.risk_score >= 80 ? 'bg-red-100 text-red-700' :
-                        student.risk_score >= 50 ? 'bg-amber-100 text-amber-700' :
-                        'bg-blue-100 text-blue-700'
+                          student.risk_score >= 50 ? 'bg-amber-100 text-amber-700' :
+                            'bg-blue-100 text-blue-700'
                       )}>
                         Risk: {student.risk_score}%
                       </Badge>

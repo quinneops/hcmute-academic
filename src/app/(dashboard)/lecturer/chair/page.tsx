@@ -20,6 +20,8 @@ interface FinalCheck {
   edit_status: string
   editing_file_url: string | null
   submitted_at: string
+  gvhd_approval_status: boolean
+  council_minutes?: string | null
 }
 
 function LecturerChairPage() {
@@ -70,7 +72,17 @@ function LecturerChairPage() {
 
   if (isLoading) {
     return (
-      <Shell role="lecturer" user={{ name: user?.full_name || '...', email: '...', avatar: '' }} breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Vai trò Chủ tịch' }]}>
+      <Shell 
+        role="lecturer" 
+        user={{ 
+          name: user?.full_name || '...', 
+          email: user?.email || '...', 
+          avatar: user?.avatar_url || '',
+          is_tbm: user?.is_tbm,
+          is_secretary: user?.is_secretary
+        }} 
+        breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Vai trò Chủ tịch' }]}
+      >
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -82,7 +94,13 @@ function LecturerChairPage() {
     <Shell
       role="lecturer"
       isTbm={user?.is_tbm}
-      user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
+      user={{ 
+        name: user?.full_name || 'Giảng viên', 
+        email: user?.email || '...', 
+        avatar: user?.avatar_url || '',
+        is_tbm: user?.is_tbm,
+        is_secretary: user?.is_secretary
+      }}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Vai trò Chủ tịch' }]}
     >
       <div className="mb-8">
@@ -107,70 +125,81 @@ function LecturerChairPage() {
           </Card>
         ) : (
           finalChecks.map((item) => (
-            <Card key={item.id} className="bg-surface-container-lowest shadow-ambient-lg border-none rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4">
-              <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-outline-variant/10">
-                <CardHeader className="flex-1 p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Mã SV: {item.student_code}</p>
-                      <CardTitle className="text-xl font-headline font-bold text-primary">{item.student_name}</CardTitle>
+              <Card key={item.id} className="bg-surface-container-lowest shadow-ambient-lg border-none rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+                <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-outline-variant/10">
+                  <CardHeader className="flex-1 p-6">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Mã SV: {item.student_code}</p>
+                        <CardTitle className="text-xl font-headline font-bold text-primary">{item.student_name}</CardTitle>
+                      </div>
+                      <div className="flex gap-2">
+                        {item.gvhd_approval_status && (
+                          <Badge className="bg-emerald-100 text-emerald-700 font-bold px-3 py-1 rounded-full text-[10px]">GVHD: ĐÃ DUYỆT</Badge>
+                        )}
+                        <Badge className="bg-amber-100 text-amber-700 font-bold px-3 py-1 rounded-full text-[10px]">CT: ĐANG CHỜ DUYỆT</Badge>
+                      </div>
                     </div>
-                    <Badge className="bg-amber-100 text-amber-700 font-bold px-3 py-1 rounded-full text-[10px]">ĐANG CHỜ DUYỆT</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-on-surface-variant leading-relaxed">
-                      <span className="font-black text-primary uppercase text-[10px] tracking-tight">Đề tài:</span> {item.thesis_title}
-                    </p>
-                    <div className="flex items-center gap-4">
-                       <p className="text-sm text-on-surface-variant">
-                        <span className="font-bold">Điểm bảo vệ:</span> <span className="text-primary font-black">{item.defense_score?.toFixed(1) || '0.0'}</span>
+                    <div className="space-y-2">
+                      <p className="text-sm text-on-surface-variant leading-relaxed">
+                        <span className="font-black text-primary uppercase text-[10px] tracking-tight">Đề tài:</span> {item.thesis_title}
                       </p>
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                      <p className="text-xs text-slate-600 font-bold">Nộp lúc: {new Date(item.submitted_at).toLocaleDateString('vi-VN', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}</p>
+                      <div className="flex items-center gap-4">
+                         <p className="text-sm text-on-surface-variant">
+                          <span className="font-bold">Điểm bảo vệ:</span> <span className="text-primary font-black">{item.defense_score?.toFixed(1) || '0.0'}</span>
+                        </p>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                        <p className="text-xs text-slate-600 font-bold">Nộp lúc: {new Date(item.submitted_at).toLocaleDateString('vi-VN', { 
+                          day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })}</p>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <div className="p-6 flex flex-col justify-center gap-3 min-w-[280px] bg-slate-50/50">
-                  <div className="flex gap-2">
+                  </CardHeader>
+                  <div className="p-6 flex flex-col justify-center gap-3 min-w-[280px] bg-slate-50/50">
+                    <div className="flex gap-2">
+                      <Button 
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] h-10 rounded-xl shadow-lg shadow-emerald-900/10 transition-all active:scale-95"
+                        onClick={() => handleReview(item.id, 'approved')}
+                        disabled={!!isProcessing || !item.gvhd_approval_status}
+                      >
+                        {isProcessing === item.id ? (
+                          <span className="animate-spin material-symbols-outlined text-sm">progress_activity</span>
+                        ) : (
+                          <><span className="material-symbols-outlined text-sm mr-1">check_circle</span>DUYỆT SỬA ĐỔI</>
+                        )}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="flex-1 border-2 border-red-100 text-red-600 hover:bg-red-50 font-bold text-[11px] h-10 rounded-xl transition-all active:scale-95"
+                        onClick={() => handleReview(item.id, 'rejected')}
+                        disabled={!!isProcessing}
+                      >
+                        <span className="material-symbols-outlined text-sm mr-1">history_edu</span>
+                        YÊU CẦU LẠI
+                      </Button>
+                    </div>
                     <Button 
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] h-10 rounded-xl shadow-lg shadow-emerald-900/10 transition-all active:scale-95"
-                      onClick={() => handleReview(item.id, 'approved')}
-                      disabled={!!isProcessing}
+                      variant="ghost" 
+                      className="w-full text-primary hover:bg-primary/5 font-black text-[10px] tracking-widest h-10 rounded-xl transition-all"
+                      onClick={() => item.editing_file_url && window.open(item.editing_file_url, '_blank')}
+                      disabled={!item.editing_file_url}
                     >
-                      {isProcessing === item.id ? (
-                        <span className="animate-spin material-symbols-outlined text-sm">progress_activity</span>
-                      ) : (
-                        <><span className="material-symbols-outlined text-sm mr-1">check_circle</span>DUYỆT SỬA ĐỔI</>
-                      )}
+                      <span className="material-symbols-outlined text-sm mr-1">edit_document</span>
+                      XEM BẢN CHỈNH SỬA
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1 border-2 border-red-100 text-red-600 hover:bg-red-50 font-bold text-[11px] h-10 rounded-xl transition-all active:scale-95"
-                      onClick={() => handleReview(item.id, 'rejected')}
-                      disabled={!!isProcessing}
-                    >
-                      <span className="material-symbols-outlined text-sm mr-1">history_edu</span>
-                      YÊU CẦU LẠI
-                    </Button>
+                    {item.council_minutes && (
+                      <Button 
+                        variant="ghost" 
+                        className="w-full text-blue-600 hover:bg-blue-50 font-black text-[10px] tracking-widest h-10 rounded-xl transition-all border border-blue-100"
+                        onClick={() => window.open(item.council_minutes, '_blank')}
+                      >
+                        <span className="material-symbols-outlined text-sm mr-1">description</span>
+                        XEM BIÊN BẢN HĐ
+                      </Button>
+                    )}
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full text-primary hover:bg-primary/5 font-black text-[10px] tracking-widest h-10 rounded-xl transition-all"
-                    onClick={() => item.editing_file_url && window.open(item.editing_file_url, '_blank')}
-                    disabled={!item.editing_file_url}
-                  >
-                    <span className="material-symbols-outlined text-sm mr-1">visibility</span>
-                    XEM BẢN CHỈNH SỬA
-                  </Button>
                 </div>
-              </div>
-            </Card>
+              </Card>
           ))
         )}
       </div>

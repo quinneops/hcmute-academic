@@ -114,6 +114,7 @@ export async function GET(request: NextRequest) {
         student_email: reg.student_email || '',
         proposal_id: reg.proposal_id,
         proposal_title: reg.proposal_title || 'Unknown',
+        proposal_type: reg.proposal_type || 'KLTN',
         registration_status: reg.status,
         submitted_at: reg.submitted_at,
         reviewed_at: reg.reviewed_at,

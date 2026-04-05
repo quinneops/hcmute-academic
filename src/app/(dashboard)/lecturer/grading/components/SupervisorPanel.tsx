@@ -91,6 +91,39 @@ export function SupervisorPanel({
                    {isCheckingPlagiarism ? 'ĐANG KIỂM TRA...' : 'KIỂM TRA ĐẠO VĂN'}
                 </Button>
              </div>
+
+             {/* AI Summary Display */}
+             {submissionSummary && (
+                <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl animate-in fade-in duration-300 mt-4">
+                   <p className="text-[10px] font-black text-blue-900 uppercase mb-2">TÓM TẮT NỘI DUNG (AI):</p>
+                   <p className="text-xs text-blue-800 leading-relaxed font-medium italic mb-3">"{submissionSummary.executive_summary || submissionSummary.summary || 'Đã tạo tóm tắt'}"</p>
+                   <div className="grid grid-cols-1 gap-2">
+                      {submissionSummary.key_contributions?.map((k: string, i: number) => (
+                        <div key={i} className="flex gap-2 text-[10px] text-blue-800 bg-white/50 p-2 rounded-lg border border-blue-100/30">
+                           <span className="font-black">📌</span> {k}
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             )}
+
+             {/* Plagiarism Report Display */}
+             {plagiarismReport && (
+                <div className="p-4 bg-orange-50/50 border border-orange-100 rounded-2xl animate-in fade-in duration-300 mt-4">
+                   <p className="text-[10px] font-black text-orange-900 uppercase mb-2">KIỂM TRA ĐẠO VĂN (AI):</p>
+                   <p className="text-[20px] font-black text-orange-600 mb-2">{plagiarismReport.originality_score}% Độ nguyên bản</p>
+                   {plagiarismReport.overall_assessment && (
+                     <p className="text-xs text-orange-800 leading-relaxed font-medium mb-3 italic">"{plagiarismReport.overall_assessment}"</p>
+                   )}
+                   <div className="grid grid-cols-1 gap-2">
+                      {plagiarismReport.flagged_sections?.slice(0, 3).map((match: any, i: number) => (
+                        <div key={i} className="flex gap-2 text-[10px] text-orange-800 bg-white/50 p-2 rounded-lg border border-orange-100/30">
+                           <span className="font-black">⚠</span> {match.reason}
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             )}
           </div>
 
           <div className="h-[1px] bg-slate-100" />

@@ -1,0 +1,29 @@
+# Task: Hoàn Thiện Tính Năng GV
+
+## 1. GVHD — Tab Sau Bảo Vệ
+- [ ] API `POST /api/lecturer/post-defense/review` (duyệt GVHD)
+- [ ] Thêm tab "Sau Bảo Vệ" vào `/lecturer/grading/page.tsx`
+- [ ] Fetch danh sách SV `post_defense_edit_status === 'pending_supervisor'`
+- [ ] Card mỗi SV: link biên bản, bài chỉnh sửa, nút Đồng ý/Không
+
+## 2. Chair — Nâng cấp
+- [ ] API trả về thêm `gvhd_approval_status`
+- [ ] Hiển thị badge GVHD đã duyệt/chưa
+- [ ] Link xem Biên bản hội đồng, Turnitin
+- [ ] Nút Duyệt chỉ active khi GVHD đã approve
+
+## 3. GVPB — Nhận xét & Câu hỏi
+- [ ] Thêm 2 textarea vào `GradingPanel` (Nhận xét + Câu hỏi phản biện)
+- [ ] Lưu vào `criteria_scores.comments` + `criteria_scores.questions`
+
+## 4. Secretary — Biên bản tự điền
+- [ ] Kéo `feedback` + `questions` của GVPB vào template biên bản
+- [ ] Nút xuất/in biên bản (window.print CSS)
+- [ ] API `PATCH /api/lecturer/secretary/minutes/{id}` lưu nội dung
+
+## 5. GVHD — Inline edit tên đề tài
+- [ ] Thêm ✏️ button cạnh title trong `proposals/page.tsx`
+- [ ] Gọi `PATCH /api/proposals/{id}` khi lưu
+
+## 6. TBM Reports — Trạng thái post-defense
+- [ ] Thêm cột trạng thái `post_defense_edit_status` vào bảng thống kê

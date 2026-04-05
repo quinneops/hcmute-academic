@@ -156,6 +156,7 @@ export async function POST(request: NextRequest) {
       student_email: student.email,
       proposal_title: newProposal.title,
       proposal_supervisor_id: newProposal.supervisor_id,
+      proposal_type: newProposal.type,
       status: 'pending',
       motivation_letter: motivation_letter || null,
       submitted_at: new Date().toISOString()

@@ -47,22 +47,76 @@ export async function GET(request: NextRequest) {
       if (defenseIds.length > 0) {
         const { data: registrations } = await supabaseAdmin
           .from('registrations')
-          .select('id, student_name, student_code, proposal_title, final_score, defense_session, reviewer_score, reviewer_feedback')
+          .select('id, student_name, student_code, proposal_title, final_score, defense_session, reviewer_score, reviewer_feedback, submissions')
           .in('id', defenseIds)
         
-        students = (registrations || []).map(reg => ({
-          registration_id: reg.id,
-          student_name: reg.student_name,
-          student_code: reg.student_code,
-          thesis_title: reg.proposal_title,
-          current_score: reg.defense_session?.result_score || reg.final_score || null,
-          detailed_scores: reg.defense_session?.detailed_scores || null,
-          current_notes: reg.defense_session?.notes || '',
-          status: reg.defense_session?.status || 'pending',
-          supervisor_score: reg.final_score || null,
-          reviewer_score: reg.reviewer_score || null,
-          reviewer_feedback: reg.reviewer_feedback || ''
-        }))
+        students = (registrations || []).map(reg => {
+          let supervisor_score = reg.final_score || null
+          let reviewer_questions = ''
+          let council_grades: any[] = []
+          let total_council_score = 0
+          let council_count = 0
+
+          // Extract questions from reviewer's grade and collect ALL council grades
+          if (reg.submissions && Array.isArray(reg.submissions)) {
+             for (const sub of reg.submissions) {
+                const roundNum = Number(sub.round_number)
+                const isDefense = roundNum === 4 || sub.submission_type === 'defense' || sub.submission_type === 'slide'
+                const isInterim = roundNum === 2 || sub.submission_type === 'interim'
+                
+                if (sub.grades && Array.isArray(sub.grades)) {
+                   // 1. Check for supervisor score (usually in Round 2 / Interim)
+                   if (isInterim && !supervisor_score) {
+                      const supervisorGrade = sub.grades.find((g: any) => g.grader_role === 'supervisor')
+                      if (supervisorGrade) supervisor_score = supervisorGrade.total_score
+                   }
+
+                   // 2. Check for reviewer questions (usually in Round 3)
+                   const reviewerGrade = sub.grades.find((g: any) => g.grader_role === 'reviewer')
+                   if (reviewerGrade?.criteria_scores?.reviewer_questions) {
+                      reviewer_questions = reviewerGrade.criteria_scores.reviewer_questions
+                   }
+
+                   // 3. If this is a defense submission, collect all council member grades
+                   if (isDefense) {
+                     const cGrades = sub.grades.filter((g: any) => g.grader_role === 'council')
+                     cGrades.forEach((g: any) => {
+                       council_grades.push({
+                         grader_id: g.grader_id,
+                         grader_name: g.grader_name || 'Hội đồng',
+                         score: g.total_score,
+                         feedback: g.feedback,
+                         criteria: g.criteria_scores
+                       })
+                       if (typeof g.total_score === 'number') {
+                         total_council_score += g.total_score
+                         council_count++
+                       }
+                     })
+                   }
+                }
+             }
+          }
+
+          const avg_council_score = council_count > 0 ? (total_council_score / council_count) : null
+
+          return {
+            registration_id: reg.id,
+            student_name: reg.student_name,
+            student_code: reg.student_code,
+            thesis_title: reg.proposal_title,
+            current_score: reg.defense_session?.result_score || avg_council_score || reg.final_score || null,
+            detailed_scores: reg.defense_session?.detailed_scores || null,
+            current_notes: reg.defense_session?.notes || '',
+            status: reg.defense_session?.status || 'pending',
+            supervisor_score: supervisor_score,
+            reviewer_score: reg.reviewer_score || null,
+            reviewer_feedback: reg.reviewer_feedback || '',
+            reviewer_questions: reviewer_questions,
+            council_grades: council_grades,
+            average_council_score: avg_council_score
+          }
+        })
       }
 
       return {

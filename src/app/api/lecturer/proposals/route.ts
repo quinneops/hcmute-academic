@@ -262,7 +262,8 @@ export async function POST(request: NextRequest) {
         supervisor_name: supervisorProfile?.full_name || '',
         supervisor_email: supervisorProfile?.email || '',
         semester_id: semester?.id || null,
-        status: 'draft',
+        type: body.type || 'KLTN',
+        status: 'approved',
       })
       .select()
       .single()

@@ -39,23 +39,73 @@ export async function GET(request: NextRequest) {
     }
     userId = user.id
 
-    // Fetch registrations for this lecturer (denormalized)
-    const { data: registrations } = await supabaseAdmin
+    // 1. Identify all roles for this user
+    // Fetch registrations as supervisor or reviewer
+    const { data: directRegistrations } = await supabaseAdmin
       .from('registrations')
       .select('*')
-      .eq('proposal_supervisor_id', userId)
+      .or(`proposal_supervisor_id.eq.${userId},reviewer_id.eq.${userId}`)
 
-    // Extract submissions that need grading from embedded data
+    // Fetch councils where user is a member
+    const { data: memberCouncils } = await supabaseAdmin
+      .from('councils')
+      .select('*')
+      .or(`chair_id.eq.${userId},secretary_id.eq.${userId}`)
+    
+    const { data: memberCouncilsArray } = await supabaseAdmin
+      .from('councils')
+      .select('*')
+      .filter('members', 'cs', `["${userId}"]`)
+    
+    const allCouncils = [...(memberCouncils || []), ...(memberCouncilsArray || [])]
+    const councilRegistrationIds = new Set<string>()
+    allCouncils.forEach(c => {
+      const defs = c.defenses || []
+      defs.forEach((d: any) => {
+        if (d.registration_id) councilRegistrationIds.add(d.registration_id)
+      })
+    })
+
+    // Fetch registrations for council membership if not already fetched
+    let allRegistrations = directRegistrations || []
+    const existingIds = new Set(allRegistrations.map(r => r.id))
+    const missingIds = Array.from(councilRegistrationIds).filter(id => !existingIds.has(id))
+    
+    if (missingIds.length > 0) {
+      const { data: councilRegs } = await supabaseAdmin
+        .from('registrations')
+        .select('*')
+        .in('id', missingIds)
+      if (councilRegs) allRegistrations = [...allRegistrations, ...councilRegs]
+    }
+
+    // Extract submissions that need grading
     const pendingGrading: any[] = []
+    const gradedHistory: any[] = []
 
-    ;(registrations || []).forEach((reg: any) => {
+    allRegistrations.forEach((reg: any) => {
+      const isSupervisor = reg.proposal_supervisor_id === userId
+      const isReviewer = reg.reviewer_id === userId
+      const isCouncil = councilRegistrationIds.has(reg.id)
+
       const submissions = reg.submissions || []
       submissions.forEach((sub: any) => {
-        // Check if submission needs grading (no grade from this lecturer)
-        const grades = sub.grades || []
-        const hasMyGrade = grades.some((g: any) => g.grader_id === userId)
+        const roundNum = sub.round_number
+        
+        // Determine if this user SHOULD grade this round based on their role
+        let assignedRole: string | null = null
+        const type = sub.submission_type || ''
+        
+        if (isSupervisor && (roundNum === 1 || roundNum === 2 || type === 'proposal' || type === 'interim' || type === 'draft')) assignedRole = 'supervisor'
+        else if (isReviewer && (roundNum === 3 || type === 'final')) assignedRole = 'reviewer'
+        else if (isCouncil && (roundNum >= 4 || type === 'defense' || type === 'slide')) assignedRole = 'council'
 
-        if (!hasMyGrade && sub.status === 'submitted') {
+        if (!assignedRole) return // Not my responsibility
+
+        const grades = sub.grades || []
+        const myGrade = grades.find((g: any) => g.grader_id === userId && g.grader_role === assignedRole)
+
+        if (!myGrade && sub.status === 'submitted') {
           pendingGrading.push({
             submission_id: sub.id,
             round_id: sub.round_id,
@@ -70,46 +120,34 @@ export async function GET(request: NextRequest) {
             file_name: sub.file_name,
             submitted_at: sub.submitted_at,
             status: sub.status,
+            assigned_role: assignedRole,
+          })
+        } else if (myGrade) {
+          gradedHistory.push({
+            id: myGrade.id || `${sub.id}-${userId}`,
+            submission_id: sub.id,
+            grade_id: myGrade.id,
+            submission: {
+              id: sub.id,
+              round_number: sub.round_number,
+              file_url: sub.file_url,
+              file_name: sub.file_name,
+            },
+            registration: {
+              student_id: reg.student_id,
+              student_name: reg.student_name,
+              student_code: reg.student_code,
+              proposal_title: reg.proposal_title,
+            },
+            grader_id: myGrade.grader_id,
+            grader_role: myGrade.grader_role,
+            criteria_scores: myGrade.criteria_scores,
+            total_score: myGrade.total_score,
+            feedback: myGrade.feedback,
+            is_published: myGrade.is_published,
+            graded_at: myGrade.graded_at,
           })
         }
-      })
-    })
-
-    // Get graded submissions history
-    const gradedHistory: any[] = []
-
-    ;(registrations || []).forEach((reg: any) => {
-      const submissions = reg.submissions || []
-      submissions.forEach((sub: any) => {
-        const grades = sub.grades || []
-        grades.forEach((grade: any) => {
-          if (grade.grader_id === userId) {
-            gradedHistory.push({
-              id: grade.id || `${sub.id}-${userId}`,
-              submission_id: sub.id,
-              grade_id: grade.id,
-              submission: {
-                id: sub.id,
-                round_number: sub.round_number,
-                file_url: sub.file_url,
-                file_name: sub.file_name,
-              },
-              registration: {
-                student_id: reg.student_id,
-                student_name: reg.student_name,
-                student_code: reg.student_code,
-                proposal_title: reg.proposal_title,
-              },
-              grader_id: grade.grader_id,
-              grader_role: grade.grader_role,
-              criteria_scores: grade.criteria_scores,
-              total_score: grade.total_score,
-              feedback: grade.feedback,
-              is_published: grade.is_published,
-              graded_at: grade.graded_at,
-            })
-          }
-        })
       })
     })
 
@@ -239,6 +277,12 @@ export async function POST(request: NextRequest) {
       updatePayload.reviewer_score = total_score
       updatePayload.reviewer_feedback = feedback
       updatePayload.reviewer_submitted_at = new Date().toISOString()
+    }
+
+    // Auto-complete if it's BCTT and supervisor publishes the grade
+    if (registration.proposal_type === 'BCTT' && role === 'supervisor' && is_published) {
+      updatePayload.status = 'completed'
+      updatePayload.completed_at = new Date().toISOString()
     }
 
     const { error: updateError } = await supabaseAdmin

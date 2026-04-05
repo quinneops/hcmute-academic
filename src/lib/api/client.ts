@@ -122,8 +122,8 @@ export const api = {
 
   // Submissions
   submissions: {
-    list: (studentId: string) =>
-      request<any[]>(`/submissions`, { params: { student_id: studentId } }),
+    list: (studentId: string, registrationId?: string | null) =>
+      request<any[]>(`/submissions`, { params: { student_id: studentId, registration_id: registrationId } }),
 
     submit: (data: any) =>
       request<any>(`/submissions`, { method: 'POST', body: data }),
@@ -251,6 +251,12 @@ export const api = {
       submissions: () => request<any[]>(`/lecturer/chair/submissions`),
       review: (registrationId: string, data: { action: 'approved' | 'rejected', notes?: string }) =>
         request<any>(`/lecturer/chair/review`, { method: 'POST', body: { registration_id: registrationId, ...data } }),
+    },
+
+    postDefense: {
+      submissions: () => request<any[]>(`/lecturer/post-defense/submissions`),
+      review: (registrationId: string, action: 'approved' | 'rejected', notes?: string) =>
+        request<any>(`/lecturer/post-defense/review`, { method: 'POST', body: { registration_id: registrationId, action, notes } }),
     },
 
     secretary: {

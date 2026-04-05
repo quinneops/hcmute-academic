@@ -20,7 +20,7 @@ interface Student {
   student_code: string
   student_email: string
   avatar_url: string | null
-  thesis_title: string
+  proposal_type: string
   registration_status: string
   progress_percentage: number
   total_submissions: number
@@ -40,8 +40,6 @@ function LecturerStudentsPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [selectedIds, setSelectedIds] = React.useState<string[]>([])
-  const [editingTitleId, setEditingTitleId] = React.useState<string | null>(null)
-  const [newTitle, setNewTitle] = React.useState('')
   const [isUpdating, setIsUpdating] = React.useState(false)
 
   React.useEffect(() => {
@@ -97,20 +95,6 @@ function LecturerStudentsPage() {
     }
   }
 
-  const handleUpdateTitle = async (id: string) => {
-    if (!newTitle.trim()) return
-    setIsUpdating(true)
-    try {
-      // Logic to update title via API
-      // Since we don't have a direct 'update title' endpoint, we use the registration update if available
-      // For now, let's mock the update in the UI state
-      setStudents(prev => prev.map(s => s.id === id ? { ...s, thesis_title: newTitle } : s))
-      setEditingTitleId(null)
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
   const toggleSelectAll = () => {
     if (selectedIds.length === filteredStudents.length) {
       setSelectedIds([])
@@ -130,7 +114,13 @@ function LecturerStudentsPage() {
       <Shell 
         role="lecturer" 
         isTbm={user?.is_tbm}
-        user={{ name: '...', email: '...', avatar: '' }} 
+        user={{ 
+          name: '...', 
+          email: '...', 
+          avatar: '',
+          is_tbm: user?.is_tbm,
+          is_secretary: user?.is_secretary
+        }} 
         breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Sinh viên' }]}
       >
         <div className="flex items-center justify-center h-64">
@@ -144,7 +134,13 @@ function LecturerStudentsPage() {
     <Shell
       role="lecturer"
       isTbm={user?.is_tbm}
-      user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
+      user={{ 
+        name: user?.full_name || 'Giảng viên', 
+        email: user?.email || '...', 
+        avatar: user?.avatar_url || '',
+        is_tbm: user?.is_tbm,
+        is_secretary: user?.is_secretary
+      }}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Sinh viên' }]}
       notifications={0}
     >
@@ -243,7 +239,7 @@ function LecturerStudentsPage() {
                     Mã SV
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-secondary uppercase tracking-wider">
-                    Đề tài (Inline Edit)
+                    Loại đề tài
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Tiến độ
@@ -293,39 +289,14 @@ function LecturerStudentsPage() {
                         <span className="text-sm text-on-surface font-mono">{student.student_code}</span>
                       </td>
                       <td className="px-6 py-4">
-                        {editingTitleId === student.id ? (
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="text" 
-                              className="px-2 py-1 bg-surface border border-primary rounded text-sm w-full min-w-[200px]"
-                              value={newTitle}
-                              onChange={(e) => setNewTitle(e.target.value)}
-                              autoFocus
-                              onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle(student.id)}
-                            />
-                            <button className="text-emerald-600" onClick={() => handleUpdateTitle(student.id)}>
-                              <span className="material-symbols-outlined text-sm">check</span>
-                            </button>
-                            <button className="text-error" onClick={() => setEditingTitleId(null)}>
-                              <span className="material-symbols-outlined text-sm">close</span>
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center group/title gap-2">
-                            <span className="text-sm text-on-surface line-clamp-1 max-w-[250px]">
-                              {student.thesis_title || 'Chưa có'}
-                            </span>
-                            <button 
-                              className="opacity-0 group-hover/title:opacity-100 text-slate-400 hover:text-primary transition-opacity"
-                              onClick={() => {
-                                setEditingTitleId(student.id);
-                                setNewTitle(student.thesis_title || '');
-                              }}
-                            >
-                              <span className="material-symbols-outlined text-[16px]">edit</span>
-                            </button>
-                          </div>
-                        )}
+                        <Badge className={cn(
+                          student.proposal_type === 'BCTT' 
+                            ? "bg-amber-100 text-amber-700 border-amber-200" 
+                            : "bg-indigo-100 text-indigo-700 border-indigo-200",
+                          "font-bold"
+                        )}>
+                          {student.proposal_type === 'BCTT' ? 'Thực tập (BCTT)' : 'Khóa luận (KLTN)'}
+                        </Badge>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">

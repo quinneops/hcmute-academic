@@ -1,24 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import Papa from 'papaparse'
-import { createGradingSheet, readGradingSheet } from '@/lib/google-sheets'
 
+// Auth verification
 const supabaseAuth = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// Admin access for bypassing RLS
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+/**
+ * GET /api/lecturer/grades/spreadsheet-sync
+ * Generates a pre-filled CSV template for students needing grading.
+ */
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('Authorization')
@@ -28,50 +26,53 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.substring(7)
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token)
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const userId = user.id
+    if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    // Fetch registrations where caller is supervisor or reviewer
     const { data: registrations } = await supabaseAdmin
       .from('registrations')
-      .select('*')
-      .or(`proposal_supervisor_id.eq.${userId},reviewer_id.eq.${userId}`)
+      .select('id, student_id, student_name, student_code, proposal_title, submissions')
+      .or(`proposal_supervisor_id.eq.${user.id},reviewer_id.eq.${user.id}`)
 
-    const csvData: any[] = []
+    // Create CSV Header
+    const headers = [
+      'Submission ID',
+      'Student Code',
+      'Student Name',
+      'Slide (1.0)',
+      'Presentation (1.5)',
+      'Timing (0.5)',
+      'Content (4.0)',
+      'Q&A (2.0)',
+      'Innovation (1.0)',
+      'Bonus (2.0)',
+      'Feedback'
+    ]
 
-    ;(registrations || []).forEach((reg: any) => {
-      const submissions = reg.submissions || []
-      submissions.forEach((sub: any) => {
-        const grades = sub.grades || []
-        const hasMyGrade = grades.some((g: any) => g.grader_id === userId)
-        
-        if (!hasMyGrade && sub.status === 'submitted') {
-          csvData.push({
-            'Student ID': `${sub.id}:${reg.id}`, // Hidden Reference
-            'Student Code': reg.student_code,
-            'Student Name': reg.student_name,
-            'Slide': '',
-            'Presentation': '',
-            'Timing': '',
-            'Content': '',
-            'Q&A': '',
-            'Innovation': '',
-            'Bonus': '',
-            'Total': '',
-            'Feedback': ''
-          })
-        }
-      })
+    const rows = []
+    ;(registrations || []).forEach(reg => {
+      // Find the latest submission that hasn't been graded by this lecturer
+      const latestSub = (reg.submissions || [])
+        .filter((s: any) => s.status === 'submitted')
+        .sort((a: any, b: any) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())[0]
+
+      if (latestSub) {
+        rows.push([
+          latestSub.id,
+          reg.student_code,
+          reg.student_name,
+          '', '', '', '', '', '', '', '' // Empty score fields
+        ])
+      }
     })
 
-    const csv = Papa.unparse(csvData)
-    const csvWithBom = '\ufeff' + csv
-
-    return new Response(csvWithBom, {
+    // Return as CSV or JSON
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    
+    return new NextResponse(csvContent, {
       headers: {
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename=grading_template_${Date.now()}.csv`
+        'Content-Type': 'text/csv',
+        'Content-Disposition': 'attachment; filename="grading_template.csv"'
       }
     })
 
@@ -81,6 +82,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * POST /api/lecturer/grades/spreadsheet-sync
+ * Sync grades from a payload of CSV/JSON data.
+ */
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('Authorization')
@@ -90,141 +95,82 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.substring(7)
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token)
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const userId = user.id
+    if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
-    const { action, csvData: incomingCsvData, spreadsheetId } = body
+    const { grades } = body // Expected: array of objects { submission_id, scores, feedback }
 
-    // 1. Action: Create Google Sheet Link
-    if (action === 'create-link') {
-      const { data: lecturerProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('full_name, email')
-        .eq('id', userId)
-        .single()
-      
-      const { data: registrations } = await supabaseAdmin
-        .from('registrations')
-        .select('*')
-        .or(`proposal_supervisor_id.eq.${userId},reviewer_id.eq.${userId}`)
-      
-      const studentsToGrade: any[] = []
-      ;(registrations || []).forEach((reg: any) => {
-        const submissions = reg.submissions || []
-        submissions.forEach((sub: any) => {
-          const grades = sub.grades || []
-          const hasMyGrade = grades.some((g: any) => g.grader_id === userId)
-          if (!hasMyGrade && sub.status === 'submitted') {
-             studentsToGrade.push({
-               submission_id: sub.id,
-               registration_id: reg.id,
-               student_code: reg.student_code,
-               student_name: reg.student_name
-             })
-          }
-        })
-      })
-
-      if (studentsToGrade.length === 0) {
-        return NextResponse.json({ error: 'Không có sinh viên nào cần chấm điểm' }, { status: 400 })
-      }
-
-      const { spreadsheetUrl, spreadsheetId: newId } = await createGradingSheet(
-        lecturerProfile?.email || '',
-        lecturerProfile?.full_name || 'Lecturer',
-        studentsToGrade
-      )
-
-      return NextResponse.json({ success: true, spreadsheetUrl, spreadsheetId: newId })
+    if (!Array.isArray(grades)) {
+      return NextResponse.json({ error: 'Invalid grades format. Array expected.' }, { status: 400 })
     }
 
-    // 2. Action: Sync (CSV or Spreadsheet)
-    let syncData = incomingCsvData
-    if (spreadsheetId) {
-       syncData = await readGradingSheet(spreadsheetId)
+    const results = {
+      total: grades.length,
+      success: 0,
+      errors: [] as string[]
     }
 
-    if (!syncData || !Array.isArray(syncData)) {
-      return NextResponse.json({ error: 'Dữ liệu đồng bộ không hợp lệ' }, { status: 400 })
-    }
-
-    const { data: lecturerProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('full_name')
-      .eq('id', userId)
-      .single()
-
-    let successCount = 0
-    let errorCount = 0
-    const errors: string[] = []
-
-    for (const row of syncData) {
-      const studentIdRef = row['Student ID']
-      if (!studentIdRef) continue
-
-      const [subId, regId] = studentIdRef.split(':')
-      if (!subId || !regId) continue
-
+    // Since we're hitting Supabase for each update in bulk, 
+    // it's better to fetch and verify then update. 
+    // We'll process them in sequence for data integrity.
+    for (const item of grades) {
       try {
+        const { submission_id, scores, feedback } = item
+
+        // Verify registration and permission
         const { data: registration } = await supabaseAdmin
           .from('registrations')
           .select('*')
-          .eq('id', regId)
+          .filter('submissions', 'cs', `[{"id":"${submission_id}"}]`)
           .single()
 
-        if (!registration) throw new Error(`Registration not found`)
-        if (registration.proposal_supervisor_id !== userId && registration.reviewer_id !== userId) {
-          throw new Error(`Unauthorized`)
+        if (!registration || (registration.proposal_supervisor_id !== user.id && registration.reviewer_id !== user.id)) {
+          results.errors.push(`ID ${submission_id}: Permission denied or not found`)
+          continue
         }
 
-        const role = registration.proposal_supervisor_id === userId ? 'supervisor' : 'reviewer'
-        const submissions = [...(registration.submissions || [])]
-        const subIndex = submissions.findIndex((s: any) => s.id === subId)
-        if (subIndex === -1) throw new Error(`Submission not found`)
+        const role = registration.proposal_supervisor_id === user.id ? 'supervisor' : 'reviewer'
+        const submissions = registration.submissions || []
+        const subIndex = submissions.findIndex((s: any) => s.id === submission_id)
+
+        if (subIndex === -1) {
+          results.errors.push(`ID ${submission_id}: Submission missing in records`)
+          continue
+        }
 
         const submission = submissions[subIndex]
-        const grades = [...(submission.grades || [])]
-        
-        const slide = parseFloat(row['Slide']) || 0
-        const presentation = parseFloat(row['Presentation']) || 0
-        const timing = parseFloat(row['Timing']) || 0
-        const content = parseFloat(row['Content']) || 0
-        const qa = parseFloat(row['Q&A']) || 0
-        const innovation = parseFloat(row['Innovation']) || 0
-        const bonus = parseFloat(row['Bonus']) || 0
-        const feedback = row['Feedback'] || ''
+        const existingGrades = submission.grades || []
+        const existingIdx = existingGrades.findIndex((g: any) => g.grader_id === user.id)
 
-        const totalScore = Math.min(12, slide + presentation + timing + content + qa + innovation + bonus)
+        // Calculate total
+        const scalarScores = Object.values(scores).map(v => parseFloat(v as string) || 0)
+        const totalScore = Math.min(12, Math.max(0, scalarScores.reduce((a, b) => a + b, 0)))
 
-        const existingGradeIndex = grades.findIndex((g: any) => g.grader_id === userId)
-        const gradePayload = {
-          id: existingGradeIndex >= 0 ? grades[existingGradeIndex].id : `grade-${Date.now()}-${registration.id.substring(0, 4)}`,
-          grader_id: userId,
-          grader_name: lecturerProfile?.full_name || '',
+        const newGradeEntry = {
+          id: existingIdx >= 0 ? existingGrades[existingIdx].id : `grade-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          grader_id: user.id,
           grader_role: role,
-          criteria_scores: {
-            slide,
-            presentation,
-            timing,
-            content,
-            qa,
-            innovation,
-            bonus
-          },
+          criteria_scores: scores,
           total_score: totalScore,
-          feedback,
-          is_published: true,
+          feedback: feedback || '',
+          graded_at: new Date().toISOString(),
+          is_published: true // Spreadsheet sync usually means "final"
+        }
+
+        if (existingIdx >= 0) {
+          existingGrades[existingIdx] = newGradeEntry
+        } else {
+          existingGrades.push(newGradeEntry)
+        }
+
+        submissions[subIndex] = {
+          ...submission,
+          grades: existingGrades,
+          status: 'graded',
           graded_at: new Date().toISOString()
         }
 
-        if (existingGradeIndex >= 0) grades[existingGradeIndex] = gradePayload
-        else grades.push(gradePayload)
-
-        submissions[subIndex] = { ...submission, grades, status: 'graded', graded_at: new Date().toISOString() }
-
+        // Update database
         const updatePayload: any = { submissions }
         if (role === 'reviewer') {
           updatePayload.reviewer_score = totalScore
@@ -232,20 +178,24 @@ export async function POST(request: NextRequest) {
           updatePayload.reviewer_submitted_at = new Date().toISOString()
         }
 
-        const { error: updateError } = await supabaseAdmin.from('registrations').update(updatePayload).eq('id', regId)
+        const { error: updateError } = await supabaseAdmin
+          .from('registrations')
+          .update(updatePayload)
+          .eq('id', registration.id)
+
         if (updateError) throw updateError
-        successCount++
+        results.success++
+
       } catch (err: any) {
-        errorCount++
-        errors.push(`${row['Student Code'] || regId}: ${err.message}`)
+        results.errors.push(`ID ${item.submission_id}: ${err.message}`)
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      summary: { total: syncData.length, success: successCount, failed: errorCount }, 
-      errors 
+    return NextResponse.json({
+      message: `Successfully synced ${results.success}/${results.total} grades.`,
+      results
     })
+
   } catch (error: any) {
     console.error('Spreadsheet sync POST error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

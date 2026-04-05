@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const studentId = searchParams.get('student_id')
+    const registrationId = searchParams.get('registration_id')
 
     if (!studentId) {
       return NextResponse.json({ error: 'Missing student_id' }, { status: 400 })
@@ -29,15 +30,35 @@ export async function GET(request: Request) {
     )
 
     // Fetch registrations for this student
-    const { data: registrations } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('registrations')
       .select('*')
       .eq('student_id', studentId)
+    
+    if (registrationId) {
+      query = query.eq('id', registrationId)
+    }
+
+    const { data: registrations } = await query
+
+    // Primary logic: If registrationId was NOT provided, filter out 'completed' or 'rejected' 
+    // to find what the student is currently working on.
+    let relevantRegistrations = registrations || []
+    
+    if (!registrationId && relevantRegistrations.length > 0) {
+      const activeOnly = relevantRegistrations.filter((reg: any) => 
+        !['completed', 'rejected'].includes(reg.status)
+      )
+      
+      if (activeOnly.length > 0) {
+        relevantRegistrations = activeOnly
+      }
+    }
 
     // Extract submissions from embedded data
     const submissions: any[] = []
-    const SUBMISSION_TYPES = ['proposal', 'draft', 'interim', 'final', 'slide', 'defense']
-    ;(registrations || []).forEach((reg: any) => {
+    const SUBMISSION_TYPES = ['proposal', 'interim', 'final', 'defense']
+    relevantRegistrations.forEach((reg: any) => {
       const regSubmissions = reg.submissions || []
       regSubmissions.forEach((sub: any) => {
         submissions.push({
@@ -54,6 +75,7 @@ export async function GET(request: Request) {
           feedback: sub.grades?.[0]?.feedback || null,
           thesis_title: reg.proposal_title || 'Khóa luận tốt nghiệp',
           registration_id: reg.id,
+          proposal_type: reg.proposal_type || 'KLTN',
           submission_type: sub.submission_type || SUBMISSION_TYPES[(sub.round_number - 1) % SUBMISSION_TYPES.length],
           document_number: sub.document_number || 1,
         })

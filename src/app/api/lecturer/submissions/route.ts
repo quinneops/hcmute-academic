@@ -43,50 +43,51 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const role = searchParams.get('role')
 
-    let registrationIds: string[] | null = null
+    // 1. Identify all roles and registrations for this user
+    // Fetch registrations as supervisor or reviewer
+    const { data: directRegistrations } = await supabaseAdmin
+      .from('registrations')
+      .select('*')
+      .or(`proposal_supervisor_id.eq.${userId},reviewer_id.eq.${userId}`)
 
-    if (role === 'council') {
-      const { data: memberCouncils } = await supabaseAdmin
-        .from('councils')
-        .select('*')
-        .or(`chair_id.eq.${userId},secretary_id.eq.${userId}`)
-      
-      const { data: moreCouncils } = await supabaseAdmin
-        .from('councils')
-        .select('*')
-        .filter('members', 'cs', `["${userId}"]`)
-
-      const allCouncils = [...(memberCouncils || []), ...(moreCouncils || [])]
-      registrationIds = []
-      allCouncils.forEach(c => {
-         const defs = c.defenses || []
-         defs.forEach((d: any) => {
-            if (d.registration_id) registrationIds!.push(d.registration_id)
-            else if (d.student_id) registrationIds!.push(d.student_id)
-         })
+    // Fetch councils where user is a member
+    const { data: memberCouncils } = await supabaseAdmin
+      .from('councils')
+      .select('*')
+      .or(`chair_id.eq.${userId},secretary_id.eq.${userId}`)
+    
+    const { data: memberCouncilsArray } = await supabaseAdmin
+      .from('councils')
+      .select('*')
+      .filter('members', 'cs', `["${userId}"]`)
+    
+    const allCouncils = [...(memberCouncils || []), ...(memberCouncilsArray || [])]
+    const councilRegistrationIds = new Set<string>()
+    allCouncils.forEach(c => {
+      const defs = c.defenses || []
+      defs.forEach((d: any) => {
+        if (d.registration_id) councilRegistrationIds.add(d.registration_id)
+        else if (d.student_id) councilRegistrationIds.add(d.student_id)
       })
+    })
+
+    // Fetch registrations for council membership if not already fetched
+    let allRegistrations = directRegistrations || []
+    const existingIds = new Set(allRegistrations.map(r => r.id))
+    const missingIds = Array.from(councilRegistrationIds).filter(id => !existingIds.has(id))
+    
+    if (missingIds.length > 0) {
+      // Use direct IDs for council match
+      const { data: councilRegs } = await supabaseAdmin
+        .from('registrations')
+        .select('*')
+        .in('id', missingIds)
+      if (councilRegs) allRegistrations = [...allRegistrations, ...councilRegs]
     }
 
-    let query = supabaseAdmin.from('registrations').select('*')
-    if (role === 'supervisor') {
-       query = query.eq('proposal_supervisor_id', userId)
-    } else if (role === 'reviewer') {
-       query = query.eq('reviewer_id', userId)
-    } else if (role === 'council') {
-       if (registrationIds && registrationIds.length > 0) {
-           // Some records use registration_id, some use student_id.
-           // To be safe, we query by both if needed. Usually, 'id' is registration_id and 'student_id' is user_id.
-           query = query.or(`id.in.(${registrationIds.join(',')}),student_id.in.(${registrationIds.join(',')})`)
-       } else {
-           query = query.eq('id', 'NO_DATA_DUMMY')
-       }
-    } else {
-       // If no role specified, return empty to prevent data leaking into wrong UI
-       query = query.eq('id', 'MISSING_ROLE_DUMMY')
-    }
+    const registrations = allRegistrations
 
-    // Fetch registrations
-    const { data: registrations } = await query
+    console.log(`[LecturerSubmissions] Found ${(registrations || []).length} registrations for role: ${role}, user: ${userId}`)
 
     // Extract submissions from embedded data
     const pendingSubmissions: any[] = []
@@ -94,16 +95,47 @@ export async function GET(request: NextRequest) {
 
     ;(registrations || []).forEach((reg: any) => {
       const submissions = reg.submissions || []
+      console.log(`[LecturerSubmissions] Processing registration ${reg.id} for student ${reg.student_name}. Submissions count: ${submissions.length}`)
+      
       submissions.forEach((sub: any) => {
+        const roundNum = sub.round_number
+        
+        // Role-based round assignment
+        let assignedInThisRole = false
+        const type = sub.submission_type || ''
+        
+        const isSupervisor = role === 'supervisor' && (reg.proposal_supervisor_id === userId)
+        const isReviewer = role === 'reviewer' && (reg.reviewer_id === userId)
+        const isCouncil = role === 'council' && councilRegistrationIds.has(reg.id)
+
+        if (isSupervisor && (roundNum === 1 || roundNum === 2 || type === 'proposal' || type === 'interim' || type === 'draft')) assignedInThisRole = true
+        else if (isReviewer && (roundNum === 3 || type === 'final')) assignedInThisRole = true
+        else if (isCouncil && (roundNum >= 4 || type === 'defense' || type === 'slide')) assignedInThisRole = true
+        
+        // Fallback for older data or if role is missing (though it shouldn't be with current logic)
+        if (!role) assignedInThisRole = true 
+
+        console.log(`[LecturerSubmissions] Checking sub ${sub.id}: round ${roundNum}, role ${role} -> assigned: ${assignedInThisRole}`)
+
+        if (!assignedInThisRole) return
+
         const grades = sub.grades || []
         const hasGrade = grades.some((g: any) => g.grader_id === userId && (!role || g.grader_role === role))
         const myGrade = grades.find((g: any) => g.grader_id === userId && (!role || g.grader_role === role))
 
         if (role === 'council') {
-          const hasSupervisorGrade = grades.some((g: any) => g.grader_role === 'supervisor')
-          const hasReviewerGrade = grades.some((g: any) => g.grader_role === 'reviewer')
-          if (!hasSupervisorGrade || !hasReviewerGrade) {
-            return // Skip this submission since it hasn't passed GVHD and GVPB yet.
+          // Check if previous rounds were graded by supervisor and reviewer in ANY submission within this registration
+          const allOtherSubmissions = reg.submissions || []
+          const hasSupervisorGradeAnywhere = allOtherSubmissions.some((s: any) => 
+            (s.grades || []).some((g: any) => g.grader_role === 'supervisor')
+          )
+          const hasReviewerGradeAnywhere = allOtherSubmissions.some((s: any) => 
+            (s.grades || []).some((g: any) => g.grader_role === 'reviewer')
+          )
+          
+          if (!hasSupervisorGradeAnywhere || !hasReviewerGradeAnywhere) {
+             console.log(`[LecturerSubmissions] Council skipping sub ${sub.id} because prev rounds not graded anywhere`)
+             return 
           }
         }
 
@@ -114,6 +146,8 @@ export async function GET(request: NextRequest) {
           student_name: reg.student_name || 'Unknown',
           student_code: reg.student_code || '',
           thesis_title: reg.proposal_title || 'Unknown',
+          proposal_type: reg.proposal_type || 'KLTN',
+          submission_type: sub.submission_type || null,
           round_number: sub.round_number,
           round_name: sub.round_name || `Round ${sub.round_number}`,
           file_url: sub.file_url,

@@ -66,27 +66,27 @@ export default function GradingGridPage() {
       if (error) throw error
 
       const rows: GradingRow[] = []
-      ;(registrations as any[] || []).forEach((reg: any) => {
-        const submissions = reg.submissions || []
-        submissions.forEach((sub: any) => {
-          if (sub.status === 'submitted') {
-            const myGrade = (sub.grades || []).find((g: any) => g.grader_id === user.id)
-            const scores = myGrade?.criteria_scores || {
-              slide: 0, presentation: 0, timing: 0, content: 0, qa: 0, innovation: 0, bonus: 0
+        ; (registrations as any[] || []).forEach((reg: any) => {
+          const submissions = reg.submissions || []
+          submissions.forEach((sub: any) => {
+            if (sub.status === 'submitted') {
+              const myGrade = (sub.grades || []).find((g: any) => g.grader_id === user.id)
+              const scores = myGrade?.criteria_scores || {
+                slide: 0, presentation: 0, timing: 0, content: 0, qa: 0, innovation: 0, bonus: 0
+              }
+
+              rows.push({
+                submission_id: sub.id,
+                registration_id: reg.id,
+                student_code: reg.student_code || 'N/A',
+                student_name: reg.student_name || 'N/A',
+                scores,
+                total: myGrade?.total_score || 0,
+                feedback: myGrade?.feedback || '',
+              })
             }
-            
-            rows.push({
-              submission_id: sub.id,
-              registration_id: reg.id,
-              student_code: reg.student_code || 'N/A',
-              student_name: reg.student_name || 'N/A',
-              scores,
-              total: myGrade?.total_score || 0,
-              feedback: myGrade?.feedback || '',
-            })
-          }
+          })
         })
-      })
 
       setData(rows)
     } catch (err) {
@@ -105,22 +105,22 @@ export default function GradingGridPage() {
     setData(prev => {
       const newData = [...prev]
       const row = { ...newData[rowIndex] }
-      
+
       if (key === 'feedback') {
         row.feedback = value as string
       } else {
         const scoreKey = key as keyof GradingRow['scores']
         const numValue = Math.max(0, Math.min(
-          CRITERIA_CONFIG.find(c => c.key === key)?.max || 10, 
+          CRITERIA_CONFIG.find(c => c.key === key)?.max || 10,
           parseFloat(value as string) || 0
         ))
         row.scores = { ...row.scores, [scoreKey]: numValue }
-        
+
         // Recalculate total
         row.total = Object.values(row.scores).reduce((a, b) => a + b, 0)
         if (row.total > 12) row.total = 12
       }
-      
+
       row.isDirty = true
       newData[rowIndex] = row
       return newData
@@ -143,17 +143,19 @@ export default function GradingGridPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({ csvData: dirtyRows.map(r => ({
-          'Student ID': `${r.submission_id}:${r.registration_id}`,
-          'Slide': r.scores.slide,
-          'Presentation': r.scores.presentation,
-          'Timing': r.scores.timing,
-          'Content': r.scores.content,
-          'Q&A': r.scores.qa,
-          'Innovation': r.scores.innovation,
-          'Bonus': r.scores.bonus,
-          'Feedback': r.feedback
-        }))})
+        body: JSON.stringify({
+          csvData: dirtyRows.map(r => ({
+            'Student ID': `${r.submission_id}:${r.registration_id}`,
+            'Slide': r.scores.slide,
+            'Presentation': r.scores.presentation,
+            'Timing': r.scores.timing,
+            'Content': r.scores.content,
+            'Q&A': r.scores.qa,
+            'Innovation': r.scores.innovation,
+            'Bonus': r.scores.bonus,
+            'Feedback': r.feedback
+          }))
+        })
       })
 
       if (response.ok) {
@@ -175,8 +177,8 @@ export default function GradingGridPage() {
     return () => clearInterval(interval)
   }, [saveDirtyRows])
 
-  const filteredData = data.filter(r => 
-    r.student_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredData = data.filter(r =>
+    r.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.student_code.includes(searchTerm)
   )
 
@@ -194,9 +196,9 @@ export default function GradingGridPage() {
       {/* Header Panel */}
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm z-10">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="hover:bg-slate-100 rounded-full w-10 h-10 p-0"
             onClick={() => router.push('/lecturer/grading')}
           >
@@ -213,40 +215,40 @@ export default function GradingGridPage() {
 
         <div className="flex items-center gap-6">
           <div className="flex flex-col items-end gap-1">
-             <div className="flex items-center gap-2">
-                {isSaving && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />}
-                <p className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider",
-                  isSaving ? "text-blue-500" : "text-slate-400"
-                )}>
-                  {isSaving ? 'ĐANG LƯU...' : 'ĐÃ ĐỒNG BỘ'}
-                </p>
-             </div>
-             {lastSaved && (
-               <p className="text-[9px] text-slate-300 font-medium">
-                 Lần cuối: {lastSaved.toLocaleTimeString()}
-               </p>
-             )}
+            <div className="flex items-center gap-2">
+              {isSaving && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />}
+              <p className={cn(
+                "text-[10px] font-bold uppercase tracking-wider",
+                isSaving ? "text-blue-500" : "text-slate-400"
+              )}>
+                {isSaving ? 'ĐANG LƯU...' : 'ĐÃ ĐỒNG BỘ'}
+              </p>
+            </div>
+            {lastSaved && (
+              <p className="text-[9px] text-slate-300 font-medium">
+                Lần cuối: {lastSaved.toLocaleTimeString()}
+              </p>
+            )}
           </div>
-          
+
           <div className="h-8 w-[1px] bg-slate-200" />
-          
+
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-            <Input 
-              placeholder="Tìm sinh viên..." 
+            <Input
+              placeholder="Tìm sinh viên..."
               className="h-9 pl-9 w-64 bg-slate-50 border-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-all font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <Button 
-             className="bg-blue-600 hover:bg-blue-700 shadow-md font-black text-xs px-6 h-9 transition-all active:scale-95"
-             onClick={saveDirtyRows}
-             disabled={isSaving || !data.some(r => r.isDirty)}
+          <Button
+            className="bg-blue-600 hover:bg-blue-700 shadow-md font-black text-xs px-6 h-9 transition-all active:scale-95"
+            onClick={saveDirtyRows}
+            disabled={isSaving || !data.some(r => r.isDirty)}
           >
-             FORCE SYNC
+            FORCE SYNC
           </Button>
         </div>
       </div>
@@ -260,14 +262,14 @@ export default function GradingGridPage() {
                 <tr className="bg-slate-50 border-b border-slate-200">
                   <th className="sticky left-0 bg-slate-50 z-20 p-4 font-black text-[10px] text-slate-500 uppercase tracking-widest border-r w-[80px]">Mã SV</th>
                   <th className="sticky left-[80px] bg-slate-50 z-20 p-4 font-black text-[10px] text-slate-500 uppercase tracking-widest border-r w-[200px]">Họ và Tên</th>
-                  
+
                   {CRITERIA_CONFIG.map(c => (
                     <th key={c.key} className="p-4 font-black text-[10px] text-slate-500 uppercase tracking-widest text-center border-r min-w-[100px]">
                       {c.label}
                       <span className="block text-[8px] text-slate-400 font-medium mt-0.5">MAX {c.max}</span>
                     </th>
                   ))}
-                  
+
                   <th className="p-4 font-black text-[10px] text-blue-600 uppercase tracking-widest text-center border-r min-w-[80px] bg-blue-50/50">TỔNG</th>
                   <th className="p-4 font-black text-[10px] text-slate-500 uppercase tracking-widest border-r min-w-[300px]">PHẢN HỒI</th>
                   <th className="p-4 font-black text-[10px] text-slate-500 uppercase tracking-widest w-[80px]">TRẠNG THÁI</th>
@@ -278,10 +280,10 @@ export default function GradingGridPage() {
                   <tr key={row.submission_id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="sticky left-0 bg-white group-hover:bg-slate-50/50 z-10 p-4 text-[11px] font-bold text-slate-500 border-r">{row.student_code}</td>
                     <td className="sticky left-[80px] bg-white group-hover:bg-slate-50/50 z-10 p-4 text-[12px] font-black text-slate-800 border-r">{row.student_name}</td>
-                    
+
                     {CRITERIA_CONFIG.map(c => (
                       <td key={c.key} className="p-2 border-r focus-within:bg-blue-50/30 transition-all">
-                        <Input 
+                        <Input
                           type="number"
                           step="0.1"
                           max={c.max}
@@ -293,18 +295,18 @@ export default function GradingGridPage() {
                         />
                       </td>
                     ))}
-                    
+
                     <td className="p-2 border-r bg-blue-50/30 text-center">
-                       <span className={cn(
-                         "text-[14px] font-black",
-                         row.total >= 10 ? "text-emerald-600" : row.total >= 5 ? "text-blue-600" : "text-amber-600"
-                       )}>
-                         {row.total.toFixed(1)}
-                       </span>
+                      <span className={cn(
+                        "text-[14px] font-black",
+                        row.total >= 10 ? "text-emerald-600" : row.total >= 5 ? "text-blue-600" : "text-amber-600"
+                      )}>
+                        {row.total.toFixed(1)}
+                      </span>
                     </td>
-                    
+
                     <td className="p-2 border-r focus-within:bg-blue-50/30 transition-all">
-                      <Input 
+                      <Input
                         value={row.feedback}
                         onChange={(e) => handleCellChange(rowIndex, 'feedback', e.target.value)}
                         className="h-8 border-none focus-visible:ring-0 text-[11px] font-medium bg-transparent hover:bg-slate-100 focus:bg-white rounded"
@@ -326,7 +328,7 @@ export default function GradingGridPage() {
           </div>
         </Card>
       </div>
-      
+
       {/* Footer Info */}
       <div className="bg-slate-800 text-slate-400 px-6 py-2 flex items-center justify-between text-[10px]">
         <div className="flex items-center gap-6">

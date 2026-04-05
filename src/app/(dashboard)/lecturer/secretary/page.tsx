@@ -24,6 +24,15 @@ interface StudentDefense {
   supervisor_score?: number | null
   reviewer_score?: number | null
   reviewer_feedback?: string
+  reviewer_questions?: string
+  council_grades?: {
+    grader_id: string
+    grader_name: string
+    score: number
+    feedback: string
+    criteria?: Record<string, number>
+  }[]
+  average_council_score?: number | null
 }
 
 interface CouncilMeeting {
@@ -69,22 +78,50 @@ function LecturerSecretaryPage() {
     meeting.students.forEach(s => {
       const detailed = s.detailed_scores || {}
       
-      // PRE-FILL LOGIC: If no current notes but reviewer feedback exists, use feedback
+      // PRE-FILL LOGIC: Combine all feedback for the final report
       let notes = s.current_notes || ''
-      if (!notes && s.reviewer_feedback) {
-        notes = `[Ý KIẾN PHẢN BIỆN]:\n${s.reviewer_feedback}`
+      if (!notes) {
+        let autoNotes = []
+        if (s.reviewer_feedback) autoNotes.push(`[NHẬN XÉT PHẢN BIỆN]:\n${s.reviewer_feedback}`)
+        if (s.reviewer_questions) autoNotes.push(`[CÂU HỎI PHẢN BIỆN]:\n${s.reviewer_questions}`)
+        
+        // Add individual council member feedback
+        if (s.council_grades && s.council_grades.length > 0) {
+           autoNotes.push(`[GÓP Ý CỦA HỘI ĐỒNG]:`)
+           s.council_grades.forEach(cg => {
+              if (cg.feedback) autoNotes.push(`- ${cg.grader_name}: ${cg.feedback}`)
+           })
+        }
+        
+        notes = autoNotes.join('\n\n')
+      }
+
+      // PRE-FILL CRITERIA: Calculate averages from individual council members if available
+      const cgList = s.council_grades || []
+      const avgCriteria = (key: string) => {
+         if (cgList.length === 0) return detailed[key]?.toString() || ''
+         let sum = 0
+         let count = 0
+         cgList.forEach(cg => {
+            const val = cg.criteria && cg.criteria[key]
+            if (val !== undefined && val !== null) {
+               sum += parseFloat(val.toString())
+               count++
+            }
+         })
+         return count > 0 ? (sum / count).toString() : (detailed[key]?.toString() || '')
       }
 
       initialScores[s.registration_id] = {
         notes: notes,
-        slide: detailed.slide?.toString() || '',
-        style: detailed.style?.toString() || '',
-        time: detailed.time?.toString() || '',
-        content: detailed.content?.toString() || '',
-        qa: detailed.qa?.toString() || '',
-        innovation: detailed.innovation?.toString() || '',
-        english: detailed.english?.toString() || '',
-        paper: detailed.paper?.toString() || '',
+        slide: avgCriteria('slide'),
+        style: avgCriteria('presentation') || avgCriteria('style'),
+        time: avgCriteria('timing') || avgCriteria('time'),
+        content: avgCriteria('content'),
+        qa: avgCriteria('qa'),
+        innovation: avgCriteria('innovation'),
+        english: avgCriteria('english') || '0',
+        paper: avgCriteria('bonus') || avgCriteria('paper') || '0',
       }
     })
     setEditScores(initialScores)
@@ -111,10 +148,10 @@ function LecturerSecretaryPage() {
     }
   }
 
-  const calculateTotal = (regId: string) => {
+  const calculateTotal = (regId: string, reviewerScore?: number | null) => {
     const s = editScores[regId]
     if (!s) return "0.00"
-    return (
+    const councilSum = (
       (parseFloat(s.slide) || 0) +
       (parseFloat(s.style) || 0) +
       (parseFloat(s.time) || 0) +
@@ -123,11 +160,15 @@ function LecturerSecretaryPage() {
       (parseFloat(s.innovation) || 0) +
       (parseFloat(s.english) || 0) +
       (parseFloat(s.paper) || 0)
-    ).toFixed(2)
+    )
+    
+    // Formula: (Council + Reviewer) / 2
+    const total = (councilSum + (reviewerScore || 0)) / 2
+    return total.toFixed(2)
   }
 
-  const handleGenerateAutoExcel = () => {
-    if (!selectedMeeting) return
+  const generateMinutesFile = () => {
+    if (!selectedMeeting) return null
     const csvData = [
       ['Mã SV', 'Họ tên', 'Tên đề tài', 'Nhận xét', 'Điểm Slide', 'Phong thái', 'Thời gian', 'Nội dung', 'Q&A', 'Sáng tạo', 'Tiếng Anh', 'Bài báo', 'Tổng Điểm']
     ]
@@ -147,17 +188,24 @@ function LecturerSecretaryPage() {
         scores.innovation || '0',
         scores.english || '0',
         scores.paper || '0',
-        calculateTotal(s.registration_id)
+        calculateTotal(s.registration_id, s.reviewer_score)
       ])
     })
 
     const BOM = '\uFEFF'
     const csv = BOM + Papa.unparse(csvData)
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    return new File([blob], `Bien_Ban_Hoi_Dong_${selectedMeeting.name.replace(/\s+/g, '_')}.csv`, { type: 'text/csv;charset=utf-8;' })
+  }
+
+  const handleGenerateAutoExcel = () => {
+    const file = generateMinutesFile()
+    if (!file) return
+
+    const url = URL.createObjectURL(file)
     const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute("download", `Bien_Ban_Hoi_Dong_${selectedMeeting.name.replace(/\s+/g, '_')}.csv`)
+    link.setAttribute("download", file.name)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -172,10 +220,12 @@ function LecturerSecretaryPage() {
        if (!confirm('Bạn chưa tải lên đủ 2 file (Excel và Docs). Bạn có chắc muốn nộp không?')) return
     }
 
-    const results = Object.entries(editScores).map(([regId, data]) => ({
-      registration_id: regId,
-      score: calculateTotal(regId),
-      notes: data.notes,
+    const results = Object.entries(editScores).map(([regId, data]) => {
+      const student = selectedMeeting.students.find(s => s.registration_id === regId)
+      return {
+        registration_id: regId,
+        score: calculateTotal(regId, student?.reviewer_score),
+        notes: data.notes,
       detailed_scores: {
         slide: parseFloat(data.slide) || 0,
         style: parseFloat(data.style) || 0,
@@ -186,7 +236,8 @@ function LecturerSecretaryPage() {
         english: parseFloat(data.english) || 0,
         paper: parseFloat(data.paper) || 0,
       }
-    }))
+    }
+  })
 
     if (!confirm('Bạn có chắc chắn muốn nộp biên bản họp này?')) return
 
@@ -205,7 +256,17 @@ function LecturerSecretaryPage() {
 
   if (isLoading) {
     return (
-      <Shell role="lecturer" user={{ name: user?.full_name || '...', email: '...', avatar: '' }} breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Vai trò Thư ký' }]}>
+      <Shell 
+        role="lecturer" 
+        user={{ 
+          name: user?.full_name || '...', 
+          email: user?.email || '...', 
+          avatar: user?.avatar_url || '',
+          is_tbm: user?.is_tbm,
+          is_secretary: user?.is_secretary
+        }} 
+        breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Vai trò Thư ký' }]}
+      >
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -217,7 +278,13 @@ function LecturerSecretaryPage() {
     <Shell
       role="lecturer"
       isTbm={user?.is_tbm}
-      user={{ name: user?.full_name || 'Giảng viên', email: user?.email || '...', avatar: user?.avatar_url || '' }}
+      user={{ 
+        name: user?.full_name || 'Giảng viên', 
+        email: user?.email || '...', 
+        avatar: user?.avatar_url || '',
+        is_tbm: user?.is_tbm,
+        is_secretary: user?.is_secretary
+      }}
       breadcrumb={[{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Vai trò Thư ký' }]}
     >
       <div className="mb-8">
@@ -360,27 +427,51 @@ function LecturerSecretaryPage() {
                            <p className="text-xs text-slate-700 italic font-medium leading-relaxed">"{student.thesis_title}"</p>
                         </div>
                         
-                        {/* Reference Scores */}
-                        <div className="grid grid-cols-2 gap-3 mb-6">
-                           <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
-                              <p className="text-[9px] font-black text-blue-400 uppercase tracking-tighter mb-1">Điểm HD</p>
-                              <p className="text-lg font-black text-blue-700">{student.supervisor_score || '--'}</p>
-                           </div>
-                           <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-100/50">
-                              <p className="text-[9px] font-black text-purple-400 uppercase tracking-tighter mb-1">Điểm PB</p>
-                              <p className="text-lg font-black text-purple-700">{student.reviewer_score || '--'}</p>
-                           </div>
-                        </div>
+                        <div className="grid grid-cols-2 gap-3 mb-2">
+                            <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
+                               <p className="text-[9px] font-black text-blue-400 uppercase tracking-tighter mb-1">Điểm HĐ (TB)</p>
+                               <p className="text-lg font-black text-blue-700">{student.average_council_score ?? '--'}</p>
+                            </div>
+                            <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-100/50">
+                               <p className="text-[9px] font-black text-purple-400 uppercase tracking-tighter mb-1">Điểm PB</p>
+                               <p className="text-lg font-black text-purple-700">{student.reviewer_score ?? '--'}</p>
+                            </div>
+                         </div>
+
+                         {/* Council Member Detailed Scores */}
+                         <div className="bg-emerald-50/30 p-3 rounded-2xl border border-emerald-100/30 mb-6">
+                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2 flex items-center gap-1">
+                               <span className="material-symbols-outlined text-[10px]">group</span> ĐIỂM THÀNH VIÊN HĐ
+                            </p>
+                            <div className="space-y-1.5 grayscale-[0.2]">
+                               {(student.council_grades && student.council_grades.length > 0) ? (
+                                  student.council_grades.map((cg, idx) => (
+                                     <div key={idx} className="flex justify-between items-center text-[10px] font-bold text-slate-600 bg-white/50 px-2 py-1 rounded-lg">
+                                        <span className="truncate max-w-[80px]">{cg.grader_name}</span>
+                                        <span className="text-emerald-700">{cg.score ?? '--'}</span>
+                                     </div>
+                                  ))
+                               ) : (
+                                  <p className="text-[9px] text-slate-400 italic">Chưa có thành viên nào chấm</p>
+                               )}
+                               {student.average_council_score !== null && student.average_council_score !== undefined && (
+                                  <div className="pt-1.5 mt-1.5 border-t border-emerald-200/30 flex justify-between items-center text-[11px] font-black text-emerald-800">
+                                     <span>TRUNG BÌNH</span>
+                                     <span>{Number(student.average_council_score).toFixed(2)}</span>
+                                  </div>
+                               )}
+                            </div>
+                         </div>
 
                         <div className="mt-6">
                            <div className="flex justify-between items-end mb-2">
                               <span className="text-[10px] font-black text-primary uppercase">Tổng điểm HĐ</span>
-                              <span className="text-3xl font-black text-primary font-headline">{calculateTotal(student.registration_id)}<span className="text-sm font-bold opacity-30 ml-1">/12.0</span></span>
+                              <span className="text-3xl font-black text-primary font-headline">{calculateTotal(student.registration_id, student.reviewer_score)}<span className="text-sm font-bold opacity-30 ml-1">/10.0</span></span>
                            </div>
                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                               <div 
                                 className="bg-primary h-full transition-all duration-500" 
-                                style={{ width: `${(parseFloat(calculateTotal(student.registration_id)) / 12) * 100}%` }}
+                                style={{ width: `${(parseFloat(calculateTotal(student.registration_id, student.reviewer_score)) / 10) * 100}%` }}
                               />
                            </div>
                         </div>

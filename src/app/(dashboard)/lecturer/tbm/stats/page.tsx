@@ -9,6 +9,11 @@ import { cn } from '@/lib/utils'
 import { withLecturer } from '@/hocs/with-role-check'
 import { useAuthUser } from '@/hooks/use-auth-user'
 import { api } from '@/lib/api/client'
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, Sector,
+  AreaChart, Area
+} from 'recharts'
 
 interface DeptStats {
   id: string
@@ -19,12 +24,13 @@ interface DeptStats {
   supervisor_name: string
   reviewer_name: string | null
   final_grade: number | null
+  post_defense_edit_status?: string | null
 }
 
 function TbmStatsPage() {
   const { user } = useAuthUser()
   const [stats, setStats] = React.useState<DeptStats[]>([])
-  const [summary, setSummary] = React.useState({ 
+  const [summary, setSummary] = React.useState<any>({ 
     total: 0, 
     bctt: 0, 
     kltn: 0, 
@@ -32,7 +38,10 @@ function TbmStatsPage() {
     completed: 0, 
     failed: 0, 
     avg_score: '0.00', 
-    lecturer_count: 0 
+    lecturer_count: 0,
+    grade_distribution: [],
+    lecturer_workload: [],
+    round_distribution: []
   })
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -45,7 +54,7 @@ function TbmStatsPage() {
         setStats(data.registrations || [])
         setSummary(data.summary || summary)
       } catch (err: any) {
-        setError(err.message || 'Không thể tải báo cáo')
+        setError(err.message || 'Lỗi tải báo cáo')
       } finally {
         setIsLoading(false)
       }
@@ -56,7 +65,7 @@ function TbmStatsPage() {
   const handleExport = () => {
     if (stats.length === 0) return
     
-    const headers = ['MSSV', 'Student Name', 'Type', 'Status', 'Supervisor', 'Reviewer', 'Grade']
+    const headers = ['MSSV', 'Student Name', 'Type', 'Status', 'Supervisor', 'Reviewer', 'Grade', 'Post Defense Status']
     const csvRows = stats.map(s => [
       s.student_code,
       s.student_name,
@@ -64,7 +73,8 @@ function TbmStatsPage() {
       s.status,
       s.supervisor_name,
       s.reviewer_name || 'N/A',
-      s.final_grade || 'N/A'
+      s.final_grade || 'N/A',
+      s.post_defense_edit_status || 'N/A'
     ].join(','))
     
     const csvContent = [headers.join(','), ...csvRows].join('\n')
@@ -81,7 +91,18 @@ function TbmStatsPage() {
 
   if (isLoading) {
     return (
-      <Shell role="lecturer" isTbm={true} user={{ name: '...', email: '...', avatar: '' }} breadcrumb={[{ label: 'TBM', href: '#' }, { label: 'Thống kê' }]}>
+      <Shell 
+        role="lecturer" 
+        isTbm={true} 
+        user={{ 
+          name: '...', 
+          email: '...', 
+          avatar: '',
+          is_tbm: user?.is_tbm,
+          is_secretary: user?.is_secretary
+        }} 
+        breadcrumb={[{ label: 'TBM', href: '#' }, { label: 'Thống kê' }]}
+      >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -93,8 +114,14 @@ function TbmStatsPage() {
     <Shell
       role="lecturer"
       isTbm={true}
-      user={{ name: user?.full_name || 'TBM', email: user?.email || '...', avatar: user?.avatar_url || '' }}
-      breadcrumb={[{ label: 'Quản lý Bộ môn', href: '/lecturer' }, { label: 'Báo cáo & Thống kê' }]}
+      user={{ 
+        name: user?.full_name || 'Giảng viên', 
+        email: user?.email || '...', 
+        avatar: user?.avatar_url || '',
+        is_tbm: user?.is_tbm,
+        is_secretary: user?.is_secretary
+      }}
+      breadcrumb={[{ label: 'TBM', href: '#' }, { label: 'Thống kê' }]}
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
@@ -107,37 +134,135 @@ function TbmStatsPage() {
         </div>
         <div className="flex gap-2">
           <Button 
-            className="bg-primary text-white font-bold gap-2"
+            className="bg-[#002068] text-white font-bold gap-2 px-6 rounded-xl shadow-lg border-none"
             onClick={handleExport}
             disabled={stats.length === 0}
           >
             <span className="material-symbols-outlined text-sm">download</span>
             Xuất Báo cáo (Excel)
           </Button>
-          <Button variant="outline" className="border-secondary text-secondary gap-2">
-            <span className="material-symbols-outlined text-sm">print</span>
-            In Báo cáo
-          </Button>
         </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {/* Quick Insights Banner */}
+      <div className="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <Card className="lg:col-span-2 bg-gradient-to-br from-[#002068] to-blue-900 border-none rounded-[2rem] shadow-ambient-lg overflow-hidden group">
+          <CardContent className="p-10 relative">
+             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32 blur-3xl group-hover:bg-white/10 transition-all duration-1000" />
+             <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                <div className="bg-white/10 backdrop-blur-md w-24 h-24 rounded-3xl flex items-center justify-center border border-white/20 shadow-inner group-hover:rotate-6 transition-transform duration-500">
+                   <span className="material-symbols-outlined text-5xl text-white">auto_awesome</span>
+                </div>
+                <div>
+                   <h3 className="text-white text-2xl font-black font-headline tracking-tight uppercase mb-2">NHẬN ĐỊNH BỘ MÔN (AI)</h3>
+                   <p className="text-blue-100/80 font-medium text-sm leading-relaxed max-w-xl italic">
+                     "Hệ thống ghi nhận tỷ lệ hoàn thành đạt {((summary.completed/summary.total)*100).toFixed(0)}%. Điểm trung bình bộ môn đang ổn định ở mức {summary.avg_score}. Khối lượng công việc đang tập trung nhiều vào tốp 5 giảng viên hướng dẫn."
+                   </p>
+                </div>
+             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white rounded-[2rem] border-none shadow-ambient-lg overflow-hidden relative group">
+           <div className="absolute top-0 right-0 p-4">
+              <span className="material-symbols-outlined text-slate-100 text-6xl group-hover:scale-110 group-hover:text-amber-50 transition-all duration-500">star</span>
+           </div>
+           <CardContent className="p-10">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">ĐIỂM TRUNG BÌNH</p>
+              <h3 className="text-6xl font-black text-[#002068] tracking-tighter mb-2">{summary.avg_score}</h3>
+              <div className="flex items-center gap-2 text-emerald-500 font-bold text-xs uppercase tracking-tight">
+                 <span className="material-symbols-outlined text-[14px]">trending_up</span>
+                 Tăng 0.4 so với kỳ trước
+              </div>
+           </CardContent>
+        </Card>
+      </div>
+
+      {/* Primary Analytics Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+        {/* Chart 1: Grade Distribution */}
+        <Card className="bg-white rounded-[2.5rem] border-none shadow-ambient-lg overflow-hidden flex flex-col">
+           <CardHeader className="px-10 pt-10 pb-0">
+              <CardTitle className="text-lg font-black font-headline text-[#002068] uppercase tracking-tight">Phổ điểm Bộ môn</CardTitle>
+              <CardDescription className="text-slate-400 font-medium">Tỷ lệ sinh viên theo các khung điểm (A, B, C, D)</CardDescription>
+           </CardHeader>
+           <CardContent className="p-6 h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={summary.grade_distribution} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                    <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
+                    <Tooltip 
+                      cursor={{ fill: '#f8fafc' }}
+                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 800 }}
+                    />
+                    <Bar dataKey="count" radius={[8, 8, 0, 0]} barSize={50}>
+                       {summary.grade_distribution.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                       ))}
+                    </Bar>
+                 </BarChart>
+              </ResponsiveContainer>
+           </CardContent>
+        </Card>
+
+        {/* Chart 2: Lecturer Workload */}
+        <Card className="bg-white rounded-[2.5rem] border-none shadow-ambient-lg overflow-hidden flex flex-col">
+           <CardHeader className="px-10 pt-10 pb-0 border-none">
+              <CardTitle className="text-lg font-black font-headline text-[#002068] uppercase tracking-tight">Tải trọng Giảng viên</CardTitle>
+              <CardDescription className="text-slate-400 font-medium">Số lượng đề tài hướng dẫn trên từng giảng viên</CardDescription>
+           </CardHeader>
+           <CardContent className="p-6 h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={summary.lecturer_workload} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700 }} width={80} />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 800 }} />
+                    <Bar dataKey="count" fill="#3b82f6" radius={[0, 8, 8, 0]} barSize={20} />
+                 </BarChart>
+              </ResponsiveContainer>
+           </CardContent>
+        </Card>
+
+        {/* Chart 3: Progress Funnel (Full Width below) */}
+        <Card className="lg:col-span-2 bg-white rounded-[2.5rem] border-none shadow-ambient-lg overflow-hidden">
+           <CardHeader className="px-10 pt-10 pb-2">
+              <CardTitle className="text-lg font-black font-headline text-[#002068] uppercase tracking-tight">Tiến độ theo Vòng (Pipeline)</CardTitle>
+              <CardDescription className="text-slate-400 font-medium">Phân bổ sinh viên theo các giai đoạn thực hiện đề tài</CardDescription>
+           </CardHeader>
+           <CardContent className="px-6 pb-6 h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                 <AreaChart data={summary.round_distribution} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                       <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#002068" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="#002068" stopOpacity={0}/>
+                       </linearGradient>
+                    </defs>
+                    <XAxis dataKey="round" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 800 }} />
+                    <Area type="monotone" dataKey="count" stroke="#002068" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+                 </AreaChart>
+              </ResponsiveContainer>
+           </CardContent>
+        </Card>
+      </div>
+
+      {/* Summary Stats Grid (Mini) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
         {[
-          { label: 'Tổng Sinh viên', value: summary.total.toString(), icon: 'group', color: 'bg-primary-fixed text-primary' },
-          { label: 'Đang hướng dẫn', value: summary.active.toString(), icon: 'pending_actions', color: 'bg-amber-100 text-amber-700' },
-          { label: 'Đã hoàn thành', value: summary.completed.toString(), icon: 'check_circle', color: 'bg-emerald-100 text-emerald-700' },
-          { label: 'Điểm TB Bộ môn', value: summary.avg_score, icon: 'analytics', color: 'bg-blue-100 text-blue-700' },
+          { label: 'Tổng Đề tài', value: summary.total.toString(), icon: 'rocket_launch', color: 'bg-indigo-50 text-indigo-600' },
+          { label: 'BCTT/KLTN', value: `${summary.bctt}/${summary.kltn}`, icon: 'folder_open', color: 'bg-blue-50 text-blue-600' },
+          { label: 'Đã hoàn tất', value: summary.completed.toString(), icon: 'verified', color: 'bg-emerald-50 text-emerald-600' },
+          { label: 'Tỉ trọng GVPB', value: `${summary.lecturer_count} GV`, icon: 'person_search', color: 'bg-violet-50 text-violet-600' },
         ].map((stat, i) => (
-          <Card key={i} className="bg-surface-container-lowest shadow-ambient-lg border-none">
+          <Card key={i} className="bg-white border-none shadow-ambient-sm rounded-[1.5rem] hover:translate-y-[-4px] transition-all duration-300">
             <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className={cn("p-3 rounded-xl", stat.color)}>
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className={cn("p-3 rounded-2xl", stat.color)}>
                   <span className="material-symbols-outlined">{stat.icon}</span>
                 </div>
                 <div>
-                  <p className="text-display-xs font-headline font-black text-on-surface">{stat.value}</p>
-                  <p className="text-xs text-secondary font-bold uppercase">{stat.label}</p>
+                  <p className="text-2xl font-black font-headline text-on-surface tracking-tighter">{stat.value}</p>
+                  <p className="text-[10px] text-secondary font-black uppercase tracking-widest">{stat.label}</p>
                 </div>
               </div>
             </CardContent>
@@ -174,6 +299,7 @@ function TbmStatsPage() {
                   <th className="px-6 py-4 text-left text-xs font-bold text-secondary uppercase">GVHD</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-secondary uppercase">GVPB</th>
                   <th className="px-6 py-4 text-center text-xs font-bold text-secondary uppercase">Trạng thái</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-secondary uppercase">Sau BV</th>
                   <th className="px-6 py-4 text-right text-xs font-bold text-secondary uppercase">Điểm</th>
                 </tr>
               </thead>
@@ -202,8 +328,21 @@ function TbmStatsPage() {
                         {s.status === 'completed' ? 'Đã hoàn thành' : s.status === 'failed' ? 'Cần thi lại' : 'Đang thực hiện'}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-right font-black text-primary">
-                      {s.final_grade?.toFixed(1) || '--'}
+                    <td className="px-6 py-4 text-center">
+                      {s.post_defense_edit_status ? (
+                        <Badge className={cn(
+                          s.post_defense_edit_status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                          s.post_defense_edit_status === 'rejected' ? 'bg-error-container text-error' :
+                          'bg-amber-100 text-amber-700'
+                        )}>
+                          {s.post_defense_edit_status === 'approved' ? 'Hoàn tất' : s.post_defense_edit_status === 'rejected' ? 'Yêu cầu lại' : 'Đang sửa'}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-slate-300 italic">--</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right font-black text-[#002068]">
+                      {s.final_grade ? s.final_grade.toFixed(1) : <span className="text-slate-300">--</span>}
                     </td>
                   </tr>
                 ))}

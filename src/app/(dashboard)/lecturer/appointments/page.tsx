@@ -37,6 +37,7 @@ function LecturerAppointmentsPage() {
   return (
     <Shell
       role="lecturer"
+      isTbm={user?.is_tbm}
       user={{
         name: user?.full_name || 'Giảng viên',
         email: user?.email || '...',

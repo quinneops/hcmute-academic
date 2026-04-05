@@ -144,7 +144,7 @@ export function SideNavBar({
           )
         })}
 
-        {role === 'lecturer' && isTbm && (
+        {role === 'lecturer' && (isTbm || is_tbm) && (
           <>
             <div className="mt-6 mb-2 px-4">
               <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em]">Bộ môn (TBM)</p>

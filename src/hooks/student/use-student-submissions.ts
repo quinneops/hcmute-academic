@@ -36,6 +36,7 @@ export interface Submission {
     }
   }>
   submission_type?: string
+  proposal_type?: 'KLTN' | 'BCTT'
   document_number?: number
 }
 
@@ -54,43 +55,63 @@ export interface SubmissionType {
   order: number
 }
 
-export const SUBMISSION_TYPES: SubmissionType[] = [
-  { type: 'proposal', label: 'Proposal', labelVi: 'Đề cương', order: 0 },
-  { type: 'draft', label: 'Draft', labelVi: 'Bản nháp', order: 1 },
-  { type: 'interim', label: 'Interim', labelVi: 'Giữa kỳ', order: 2 },
-  { type: 'final', label: 'Final', labelVi: 'Cuối kỳ', order: 3 },
-  { type: 'slide', label: 'Slide', labelVi: 'Slide', order: 4 },
-  { type: 'defense', label: 'Defense', labelVi: 'Bảo vệ', order: 5 },
+export const KLTN_SUBMISSION_TYPES: SubmissionType[] = [
+  { type: 'proposal', label: 'Proposal & Draft', labelVi: 'Đề cương & Bản nháp', order: 0 },
+  { type: 'interim', label: 'Interim', labelVi: 'Báo cáo Giữa kỳ', order: 1 },
+  { type: 'final', label: 'Final Review', labelVi: 'Nhận xét Phản biện', order: 2 },
+  { type: 'defense', label: 'Final Defense', labelVi: 'Bảo vệ Hội đồng', order: 3 },
 ]
 
-export function getSubmissionTypeFromRound(roundNumber: number): SubmissionType {
-  const typeIndex = (roundNumber - 1) % SUBMISSION_TYPES.length
-  return SUBMISSION_TYPES[typeIndex]
+export const BCTT_SUBMISSION_TYPES: SubmissionType[] = [
+  { type: 'bctt_report', label: 'BCTT Report', labelVi: 'Báo cáo Thực tập', order: 0 }
+]
+
+export function getSubmissionTypes(proposalType?: string): SubmissionType[] {
+  return proposalType === 'BCTT' ? BCTT_SUBMISSION_TYPES : KLTN_SUBMISSION_TYPES
 }
 
-export function getNextAllowedType(submissions: Submission[]): SubmissionType | null {
+export function getSubmissionTypeFromRound(roundNumber: number, proposalType?: string): SubmissionType {
+  const types = getSubmissionTypes(proposalType)
+  const typeIndex = (roundNumber - 1) % types.length
+  return types[typeIndex]
+}
+
+export function getNextAllowedType(submissions: Submission[], proposalType?: string): SubmissionType | null {
+  const types = getSubmissionTypes(proposalType)
   if (!submissions || submissions.length === 0) {
-    return SUBMISSION_TYPES[0] // proposal
+    return types[0]
   }
 
-  // Find highest order type that has been graded
+  // Find the highest order milestone that has a graded submission
   const gradedSubmissions = submissions.filter(s => s.status === 'graded')
   if (gradedSubmissions.length === 0) {
-    // Must grade proposal first
-    return SUBMISSION_TYPES[0]
+    return types[0]
   }
 
-  const maxGradedRound = Math.max(...gradedSubmissions.map(s => s.round_number))
-  const nextTypeIndex = maxGradedRound % SUBMISSION_TYPES.length
+  // Determine the highest milestone index reached and graded
+  const gradedIndexes = gradedSubmissions.map(s => {
+    try {
+      const sType = getSubmissionTypeFromRound(s.round_number, proposalType)
+      if (!sType) return -1
+      return types.findIndex(t => t.type === sType.type)
+    } catch (e) {
+      return -1
+    }
+  }).filter(idx => idx >= 0)
 
-  if (nextTypeIndex >= SUBMISSION_TYPES.length) {
-    return null // All complete
+  const maxGradedIndex = gradedIndexes.length > 0 ? Math.max(...gradedIndexes) : -1
+
+  // If the last milestone is graded, we are done
+  if (maxGradedIndex >= types.length - 1) {
+    return null
   }
 
-  return SUBMISSION_TYPES[nextTypeIndex]
+  // The next milestone is the one immediately after the highest graded one
+  const nextIndex = maxGradedIndex + 1
+  return nextIndex < types.length ? types[nextIndex] : null
 }
 
-export function useStudentSubmissions(studentId: string) {
+export function useStudentSubmissions(studentId: string, currentProposalType?: string, registrationId?: string | null) {
   const [submissions, setSubmissions] = React.useState<Submission[]>([])
   const [milestoneProgress, setMilestoneProgress] = React.useState<MilestoneProgress[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -102,10 +123,11 @@ export function useStudentSubmissions(studentId: string) {
 
     setIsLoading(true)
     setError(null)
+    
+    console.log('[useSubmissions] Fetching for:', { studentId, registrationId })
 
     try {
-      const data = await api.submissions.list(studentId)
-
+      const data = await api.submissions.list(studentId, registrationId)
       const submissionsData = ((data as any) || []).map((s: any) => ({
         id: s.id,
         round_number: s.round_number,
@@ -118,54 +140,59 @@ export function useStudentSubmissions(studentId: string) {
         score: s.score || null,
         grade: s.grade || null,
         feedback: s.feedback,
-        thesis_title: s.thesis_title || 'Khóa luận tốt nghiệp',
+        thesis_title: s.thesis_title || 'Khóa luận / Đề tài',
+        proposal_type: s.proposal_type || 'KLTN', 
+        submission_type: s.submission_type,
+        registration_id: s.registration_id,
         grades: s.grades || [],
       }))
+      
+      const activeProposalType = (currentProposalType || (submissionsData.length > 0 ? submissionsData[0].proposal_type : 'KLTN')) as 'KLTN' | 'BCTT'
+      const types = getSubmissionTypes(activeProposalType)
+      let relevantSubmissions = activeProposalType ? submissionsData.filter((s: any) => s.proposal_type === activeProposalType) : submissionsData
+      
+      if (registrationId) {
+        relevantSubmissions = relevantSubmissions.filter((s: any) => s.registration_id === registrationId)
+      }
 
-      setSubmissions(submissionsData)
+      setSubmissions(relevantSubmissions)
 
-      // Calculate milestone progress with sequential enforcement
-      const milestones = SUBMISSION_TYPES.map((submissionType) => {
-        // Find submissions for this type
-        const typeSubmissions = submissionsData.filter(s => {
-          const sType = getSubmissionTypeFromRound(s.round_number)
-          return sType.type === submissionType.type
+      // Calculate milestones
+      const milestones = types.map((submissionType) => {
+        const typeSubmissions = relevantSubmissions.filter(s => {
+          const sType = getSubmissionTypeFromRound(s.round_number, activeProposalType)
+          return sType.type === submissionType.type || s.submission_type === submissionType.type
         })
-
-        // Check if any submission for this type is graded
         const isCompleted = typeSubmissions.some(s => s.status === 'graded')
-        const latestSubmission = typeSubmissions.length > 0
-          ? typeSubmissions[typeSubmissions.length - 1]
-          : undefined
-
         return {
           milestone: submissionType.labelVi,
           completed: isCompleted,
-          submission: latestSubmission,
-          canUploadMultiple: true, // Allow multiple docs per milestone
-          nextAllowed: false, // Will be set below
+          submission: typeSubmissions.length > 0 ? typeSubmissions[typeSubmissions.length - 1] : undefined,
+          canUploadMultiple: true,
+          nextAllowed: false,
         }
       })
 
-      // Calculate next allowed milestone
-      const nextAllowedType = getNextAllowedType(submissionsData)
+      const nextAllowedType = getNextAllowedType(relevantSubmissions, activeProposalType)
       if (nextAllowedType) {
         const nextIndex = milestones.findIndex(m =>
-          SUBMISSION_TYPES.find(t => t.labelVi === m.milestone)?.type === nextAllowedType.type
+          types.find(t => t.labelVi === m.milestone)?.type === nextAllowedType.type
         )
-        if (nextIndex >= 0) {
-          milestones[nextIndex].nextAllowed = true
-        }
+        if (nextIndex >= 0) milestones[nextIndex].nextAllowed = true
       }
 
       setMilestoneProgress(milestones)
     } catch (err: any) {
-      console.error('Submissions fetch error:', err)
-      setError(err.message || 'Không thể tải lịch sử nộp')
+      console.error('[useSubmissions] Error:', err)
+      setError(err.message || 'Error loading submissions')
     } finally {
       setIsLoading(false)
     }
-  }, [studentId])
+  }, [studentId, currentProposalType, registrationId])
+
+  React.useEffect(() => {
+    fetchSubmissions()
+  }, [fetchSubmissions])
 
   const uploadSubmission = async (
     file: File,
@@ -201,11 +228,16 @@ export function useStudentSubmissions(studentId: string) {
       formData.append('registration_id', registrationId)
       formData.append('submission_type', submissionType)
 
-      console.log('[uploadSubmission] FormData prepared, sending to API...')
+      console.log('[uploadSubmission] FormData prepared:', {
+        student_id: studentId,
+        registration_id: registrationId,
+        submission_type: submissionType,
+        file_name: file.name
+      })
 
       const response = await api.submissions.upload(formData)
 
-      console.log('[uploadSubmission] Upload successful')
+      console.log('[uploadSubmission] Upload success response:', response)
 
       await fetchSubmissions()
       return { success: true }
@@ -233,6 +265,7 @@ export function useStudentSubmissions(studentId: string) {
     error,
     isUploading,
     uploadSubmission,
+    activeProposalType: (currentProposalType || (submissions.length > 0 ? submissions[0].proposal_type : 'KLTN')) as 'KLTN' | 'BCTT',
     refresh: fetchSubmissions,
   }
 }

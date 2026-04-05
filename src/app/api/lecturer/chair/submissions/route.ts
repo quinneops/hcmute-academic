@@ -87,6 +87,8 @@ export async function GET(request: NextRequest) {
       edit_status: reg.post_defense_edit_status,
       editing_file_url: reg.editing_file_url,
       submitted_at: reg.updated_at, // Using updated_at as proxy for submission time
+      gvhd_approval_status: reg.post_defense_edit_status === 'pending_chair',
+      council_minutes: reg.defense_session?.council_minutes,
     }))
 
     return NextResponse.json(result)
