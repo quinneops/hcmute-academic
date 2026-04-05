@@ -13,8 +13,8 @@ import { createClient } from '@/lib/supabase/client'
 import Papa from 'papaparse'
 
 // Sub-components
-import { SupervisorPanel } from './components/SupervisorPanel'
-import { SubmissionViewerModal } from './components/SubmissionViewerModal'
+import { GradingPanel } from './components/GradingPanel'
+import { SubmissionViewerModal } from '../grading/components/SubmissionViewerModal'
 import { cn } from '@/lib/utils'
 
 interface Submission {
@@ -99,7 +99,7 @@ const GRADING_CRITERIA = [
   }
 ]
 
-function LecturerGradingPage() {
+function LecturerReviewerPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuthUser()
@@ -138,7 +138,7 @@ function LecturerGradingPage() {
     try {
       setIsLoading(true)
       setError(null)
-      const data = await api.lecturer.submissions({ role: 'supervisor' })
+      const data = await api.lecturer.submissions({ role: 'reviewer' })
       setPendingSubmissions(data.pendingSubmissions || [])
       setGradedSubmissions(data.gradedSubmissions || [])
 
@@ -213,7 +213,7 @@ function LecturerGradingPage() {
         total_score: parseFloat(calculateTotal),
         feedback: feedback,
         is_published: publish,
-        grader_role: 'supervisor',
+        grader_role: 'reviewer',
         turnitin_score: turnitinReport.similarity_score,
         turnitin_file: turnitinReport.file_url
       })
@@ -331,8 +331,8 @@ function LecturerGradingPage() {
         is_secretary: user?.is_secretary
       }}
       breadcrumb={selectedSubmission ? 
-        [{ label: 'Chấm điểm', href: '/lecturer/grading' }, { label: selectedSubmission.student_name }] : 
-        [{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Chấm điểm' }]}
+        [{ label: 'Chấm Phản Biện', href: '/lecturer/reviewer' }, { label: selectedSubmission.student_name }] : 
+        [{ label: 'Bảng điều khiển', href: '/lecturer' }, { label: 'Chấm Phản Biện' }]}
     >
       {/* View 1: Main Dashboard List */}
       {!selectedSubmission && (
@@ -340,8 +340,8 @@ function LecturerGradingPage() {
            {/* Header Area */}
            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-200/60">
               <div>
-                 <h1 className="text-3xl font-black font-headline text-[#002068] tracking-tight uppercase mb-2">QUẢN LÝ TIẾN ĐỘ</h1>
-                 <p className="text-slate-500 font-medium">Theo dõi và phê duyệt sản phẩm của sinh viên do bạn hướng dẫn.</p>
+                 <h1 className="text-3xl font-black font-headline text-[#002068] tracking-tight uppercase mb-2">CHẤM ĐIỂM PHẢN BIỆN</h1>
+                 <p className="text-slate-500 font-medium">Theo dõi và chấm điểm các khóa luận được phân công phản biện.</p>
               </div>
            </div>
 
@@ -483,14 +483,22 @@ function LecturerGradingPage() {
                     <p className="text-lg text-slate-700 font-medium italic leading-relaxed">"{selectedSubmission.thesis_title}"</p>
                  </div>
 
-                 {/* The Supervisor Panel */}
+                 {/* The Reviewer Grading Panel */}
                  <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-ambient-lg p-1 md:p-2">
-                    <SupervisorPanel 
+                    <GradingPanel 
                        submission={selectedSubmission}
+                       criteria={GRADING_CRITERIA}
+                       scores={scores}
+                       onScoreChange={(key: string, val: string) => setScores(prev => ({ ...prev, [key]: val }))}
+                       onShowTurnitin={() => setShowTurnitinUpload(true)}
                        feedback={feedback}
                        onFeedbackChange={setFeedback}
                        onSubmit={handleSubmitGrade}
                        isPublishing={isPublishing}
+                       calculateTotal={calculateTotal}
+                       isGeneratingAi={isGeneratingAi}
+                       aiSuggestions={aiSuggestions}
+                       onGenerateAiSuggestion={handleGenerateAiSuggestion}
                        isGeneratingSummary={isGeneratingSummary}
                        submissionSummary={submissionSummary}
                        onGenerateSummary={handleGenerateSummary}
@@ -548,4 +556,4 @@ function LecturerGradingPage() {
   )
 }
 
-export default withLecturer(LecturerGradingPage)
+export default withLecturer(LecturerReviewerPage)

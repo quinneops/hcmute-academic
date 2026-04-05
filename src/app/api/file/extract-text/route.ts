@@ -37,7 +37,11 @@ export async function POST(request: NextRequest) {
       const pdfjsLib = await import('pdfjs-dist')
       pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
 
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer })
+      const loadingTask = pdfjsLib.getDocument({ 
+        data: arrayBuffer,
+        cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
+        cMapPacked: true,
+      })
       const pdf = await loadingTask.promise
 
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -47,9 +51,15 @@ export async function POST(request: NextRequest) {
         extractedText += pageText + '\n'
       }
     } else if (['.txt', '.md', '.json', '.xml', '.csv'].includes(fileExtension)) {
-      // Text files - decode directly
-      const decoder = new TextDecoder('utf-8')
-      extractedText = decoder.decode(arrayBuffer)
+      // Text files - decode with fallback to Vietnamese encoding
+      try {
+        const utf8Decoder = new TextDecoder('utf-8', { fatal: true })
+        extractedText = utf8Decoder.decode(arrayBuffer)
+      } catch (e) {
+        console.log('UTF-8 decode failed, falling back to windows-1258')
+        const winDecoder = new TextDecoder('windows-1258')
+        extractedText = winDecoder.decode(arrayBuffer)
+      }
     } else if (['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'].includes(fileExtension)) {
       // Office files - return basic info (full text extraction would need additional libraries)
       extractedText = `[File Office: ${fileName || 'Unknown'}]\nKích thước: ${(fileSize / 1024 / 1024).toFixed(2)} MB\n\nLưu ý: Nội dung file Office không thể trích xuất đầy đủ. Vui lòng tải xuống để xem chi tiết.`

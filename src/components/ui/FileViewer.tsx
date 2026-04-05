@@ -211,8 +211,8 @@ export function FileViewer({
         // For text and office files, try to show extracted content or iframe
         if (extractedContent) {
           return (
-            <div className="p-6 bg-white" style={{ minHeight: '500px', maxHeight: '70vh', overflow: 'auto' }}>
-              <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
+            <div className="p-8 bg-white/80 backdrop-blur-sm shadow-inner" style={{ minHeight: '500px', maxHeight: '75vh', overflow: 'auto' }}>
+              <pre className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed selection:bg-blue-100" style={{ fontFamily: '"Inter", "Roboto Mono", "Courier New", monospace' }}>
                 {extractedContent}
               </pre>
             </div>

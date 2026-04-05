@@ -177,8 +177,8 @@ export const api = {
     students: () =>
       request<any>(`/lecturer/students`),
 
-    submissions: (studentId?: string) =>
-      request<any>(`/lecturer/submissions`, { params: studentId ? { student_id: studentId } : {} }),
+    submissions: (params?: { student_id?: string, role?: string }) =>
+      request<any>(`/lecturer/submissions`, { params: params || {} }),
 
     profile: {
       get: () =>

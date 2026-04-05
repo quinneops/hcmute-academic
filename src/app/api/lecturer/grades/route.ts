@@ -171,14 +171,20 @@ export async function POST(request: NextRequest) {
       .eq('id', registration_id)
       .single()
 
-    if (!registration || (registration.proposal_supervisor_id !== userId && registration.reviewer_id !== userId)) {
-      return NextResponse.json(
-        { error: 'You can only grade your own students\' submissions or students you are reviewing' },
-        { status: 403 }
-      )
+    const grader_role = body.grader_role
+
+    if (!registration) {
+      return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
     }
 
-    const role = registration.proposal_supervisor_id === userId ? 'supervisor' : 'reviewer'
+    if (grader_role === 'supervisor' && registration.proposal_supervisor_id !== userId) {
+      return NextResponse.json({ error: 'You can only grade your own students' }, { status: 403 })
+    }
+    if (grader_role === 'reviewer' && registration.reviewer_id !== userId) {
+      return NextResponse.json({ error: 'You can only grade your assigned review students' }, { status: 403 })
+    }
+
+    const role = grader_role || (registration.proposal_supervisor_id === userId ? 'supervisor' : 'reviewer')
 
     // Get lecturer profile for denormalization
     const { data: lecturerProfile } = await supabaseAdmin

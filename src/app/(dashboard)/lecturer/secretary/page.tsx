@@ -10,6 +10,7 @@ import { withLecturer } from '@/hocs/with-role-check'
 import { useAuthUser } from '@/hooks/use-auth-user'
 
 import { api } from '@/lib/api/client'
+import Papa from 'papaparse'
 
 interface StudentDefense {
   registration_id: string
@@ -34,17 +35,6 @@ interface CouncilMeeting {
   status: string
   students: StudentDefense[]
 }
-
-const CRITERIA = [
-  { id: 'slide', label: 'Slide trình chiếu', max: 1.0 },
-  { id: 'style', label: 'Phong thái', max: 1.5 },
-  { id: 'time', label: 'Thời gian', max: 0.5 },
-  { id: 'content', label: 'Nội dung', max: 4.0 },
-  { id: 'qa', label: 'Trả lời', max: 2.0 },
-  { id: 'innovation', label: 'Sáng tạo', max: 1.0 },
-  { id: 'english', label: 'Tiếng Anh', max: 1.0 },
-  { id: 'paper', label: 'Bài báo', max: 1.0 },
-]
 
 function LecturerSecretaryPage() {
   const { user } = useAuthUser()
@@ -134,6 +124,45 @@ function LecturerSecretaryPage() {
       (parseFloat(s.english) || 0) +
       (parseFloat(s.paper) || 0)
     ).toFixed(2)
+  }
+
+  const handleGenerateAutoExcel = () => {
+    if (!selectedMeeting) return
+    const csvData = [
+      ['Mã SV', 'Họ tên', 'Tên đề tài', 'Nhận xét', 'Điểm Slide', 'Phong thái', 'Thời gian', 'Nội dung', 'Q&A', 'Sáng tạo', 'Tiếng Anh', 'Bài báo', 'Tổng Điểm']
+    ]
+    
+    selectedMeeting.students.forEach(s => {
+      const scores = editScores[s.registration_id] || {}
+      csvData.push([
+        s.student_code,
+        s.student_name,
+        s.thesis_title,
+        scores.notes || '',
+        scores.slide || '0',
+        scores.style || '0',
+        scores.time || '0',
+        scores.content || '0',
+        scores.qa || '0',
+        scores.innovation || '0',
+        scores.english || '0',
+        scores.paper || '0',
+        calculateTotal(s.registration_id)
+      ])
+    })
+
+    const BOM = '\uFEFF'
+    const csv = BOM + Papa.unparse(csvData)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", `Bien_Ban_Hoi_Dong_${selectedMeeting.name.replace(/\s+/g, '_')}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    alert('Đã tải xuống file Biên bản Excel tự động. Bạn có thể kiểm tra và tải lên hệ thống.')
   }
 
   const handleSubmitResults = async () => {
@@ -301,13 +330,22 @@ function LecturerSecretaryPage() {
                    </div>
                 </div>
               </div>
-              <Button 
-                className="bg-primary hover:bg-primary/90 text-white font-black px-10 h-14 rounded-2xl shadow-2xl shadow-blue-900/20"
-                onClick={handleSubmitResults}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <span className="animate-spin material-symbols-outlined">progress_activity</span> : "NỘP BIÊN BẢN TỔNG HỢP"}
-              </Button>
+              <div className="flex flex-col gap-3">
+                 <Button 
+                   variant="outline"
+                   className="text-primary border-primary font-black px-10 h-12 rounded-2xl hover:bg-blue-50"
+                   onClick={handleGenerateAutoExcel}
+                 >
+                   <span className="material-symbols-outlined mr-2">download</span> TỰ ĐỘNG TẠO EXCEL
+                 </Button>
+                 <Button 
+                   className="bg-primary hover:bg-primary/90 text-white font-black px-10 h-14 rounded-2xl shadow-2xl shadow-blue-900/20"
+                   onClick={handleSubmitResults}
+                   disabled={isSubmitting}
+                 >
+                   {isSubmitting ? <span className="animate-spin material-symbols-outlined">progress_activity</span> : "NỘP KẾT QUẢ TỔNG HỢP"}
+                 </Button>
+              </div>
            </div>
 
            <div className="space-y-6">
@@ -348,26 +386,7 @@ function LecturerSecretaryPage() {
                         </div>
                       </div>
 
-                      <div className="xl:col-span-5 grid grid-cols-2 gap-4">
-                        {CRITERIA.map(c => (
-                          <div key={c.id}>
-                            <label className="text-[10px] font-black text-slate-500 uppercase block mb-1.5 ml-1">{c.label} <span className="text-slate-300 ml-1">(Max {c.max})</span></label>
-                            <input 
-                              type="number"
-                              step="0.1"
-                              placeholder="0.0"
-                              value={editScores[student.registration_id]?.[c.id] || ''}
-                              onChange={(e) => setEditScores({
-                                ...editScores,
-                                [student.registration_id]: { ...editScores[student.registration_id], [c.id]: e.target.value }
-                              })}
-                              className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-2xl px-4 h-11 text-sm font-bold text-primary focus:border-primary transition-all outline-none"
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="xl:col-span-4 flex flex-col">
+                      <div className="xl:col-span-9 flex flex-col">
                         <label className="text-[10px] font-black text-slate-500 uppercase block mb-1.5 ml-1">Nhận xét hội đồng</label>
                         <textarea 
                            placeholder="Nhập nhận xét chung..."
@@ -384,23 +403,6 @@ function LecturerSecretaryPage() {
               ))}
            </div>
         </div>
-      )}
-
-      {!selectedMeeting && (
-        <Card className="mt-12 bg-gradient-to-br from-blue-600 to-[#002068] text-white border-none rounded-[40px] p-10 relative overflow-hidden shadow-2xl shadow-blue-900/30 ring-8 ring-white/5">
-          <div className="relative z-10 flex gap-8 items-start">
-            <div className="w-16 h-16 rounded-[24px] bg-white/10 backdrop-blur-xl flex items-center justify-center flex-shrink-0 border border-white/20">
-              <span className="material-symbols-outlined text-4xl text-white">grading</span>
-            </div>
-            <div className="max-w-2xl">
-              <h4 className="text-2xl font-black font-headline mb-4 tracking-tight">Quy trình ghi điểm mới (12.0)</h4>
-              <p className="text-blue-100 text-lg leading-relaxed font-medium">
-                Vui lòng nhập đầy đủ các trường tiểu chuẩn đánh giá theo mẫu của khóa học. Các trường bao gồm cả điểm cộng cho Bài báo khoa học và Viết bằng tiếng Anh. Tổng điểm tối đa là 12.0 điểm.
-              </p>
-            </div>
-          </div>
-          <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-white/5 rounded-full blur-3xl animate-pulse" />
-        </Card>
       )}
     </Shell>
   )

@@ -318,7 +318,7 @@ function LecturerProposalsPage() {
                       variant="outline"
                       className="flex items-center gap-2 bg-primary-container/20 text-primary hover:bg-primary-container/40 border-primary/20"
                       onClick={() => {
-                        window.location.href = `/lecturer/ai-assistant?contextType=proposal&contextId=${selectedProposal.id}&contextTitle=${encodeURIComponent(selectedProposal.title)}`;
+                        window.location.href = `/lecturer/ai?contextType=proposal&contextId=${selectedProposal.id}&contextTitle=${encodeURIComponent(selectedProposal.title)}`;
                       }}
                     >
                       <span className="material-symbols-outlined text-sm">smart_toy</span>

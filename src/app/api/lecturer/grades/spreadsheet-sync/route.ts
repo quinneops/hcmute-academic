@@ -66,8 +66,9 @@ export async function GET(request: NextRequest) {
     })
 
     const csv = Papa.unparse(csvData)
+    const csvWithBom = '\ufeff' + csv
 
-    return new Response(csv, {
+    return new Response(csvWithBom, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename=grading_template_${Date.now()}.csv`
