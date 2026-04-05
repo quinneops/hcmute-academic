@@ -178,7 +178,7 @@ export function SideNavBar({
         onClick={() => mobile && onClose?.()}
       >
         <div className="flex items-center gap-3 p-3 bg-surface-container-lowest rounded-lg shadow-ambient-sm hover:bg-surface-container-high transition-colors">
-          <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-white font-bold text-sm">
+          <div className="w-10 h-10 rounded-full bg-[#002068] flex items-center justify-center text-white font-bold text-sm">
             {userAvatar ? (
               <img src={userAvatar} alt={userName} className="w-full h-full object-cover rounded-full" />
             ) : (

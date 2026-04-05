@@ -144,7 +144,7 @@ export function TopAppBar({
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={user.avatar} alt={user.name || 'User'} />
-                    <AvatarFallback className="bg-primary-container text-on-primary font-semibold">
+                    <AvatarFallback className="bg-[#002068] text-white font-bold">
                       {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                     </AvatarFallback>
                   </Avatar>
