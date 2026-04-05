@@ -148,7 +148,7 @@ function LecturerSecretaryPage() {
     }
   }
 
-  const calculateTotal = (regId: string, reviewerScore?: number | null) => {
+  const calculateTotal = (regId: string, reviewerScore?: number | null, supervisorScore?: number | null) => {
     const s = editScores[regId]
     if (!s) return "0.00"
     const councilSum = (
@@ -162,15 +162,15 @@ function LecturerSecretaryPage() {
       (parseFloat(s.paper) || 0)
     )
     
-    // Formula: (Council + Reviewer) / 2
-    const total = (councilSum + (reviewerScore || 0)) / 2
+    // Formula: (Reviewer + Supervisor + Council) / 3
+    const total = (councilSum + (reviewerScore || 0) + (supervisorScore || 0)) / 3
     return total.toFixed(2)
   }
 
   const generateMinutesFile = () => {
     if (!selectedMeeting) return null
     const csvData = [
-      ['Mã SV', 'Họ tên', 'Tên đề tài', 'Nhận xét', 'Điểm Slide', 'Phong thái', 'Thời gian', 'Nội dung', 'Q&A', 'Sáng tạo', 'Tiếng Anh', 'Bài báo', 'Tổng Điểm']
+      ['Mã SV', 'Họ tên', 'Tên đề tài', 'Nhận xét', 'Điểm Slide', 'Phong thái', 'Thời gian', 'Nội dung', 'Q&A', 'Sáng tạo', 'Tiếng Anh', 'Bài báo', 'Điểm HD', 'Điểm PB', 'Tổng Điểm']
     ]
     
     selectedMeeting.students.forEach(s => {
@@ -188,7 +188,9 @@ function LecturerSecretaryPage() {
         scores.innovation || '0',
         scores.english || '0',
         scores.paper || '0',
-        calculateTotal(s.registration_id, s.reviewer_score)
+        s.supervisor_score || '0',
+        s.reviewer_score || '0',
+        calculateTotal(s.registration_id, s.reviewer_score, s.supervisor_score)
       ])
     })
 
@@ -224,7 +226,7 @@ function LecturerSecretaryPage() {
       const student = selectedMeeting.students.find(s => s.registration_id === regId)
       return {
         registration_id: regId,
-        score: calculateTotal(regId, student?.reviewer_score),
+        score: calculateTotal(regId, student?.reviewer_score, student?.supervisor_score),
         notes: data.notes,
       detailed_scores: {
         slide: parseFloat(data.slide) || 0,
@@ -438,6 +440,11 @@ function LecturerSecretaryPage() {
                             </div>
                          </div>
 
+                         <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-100/50 mb-3">
+                            <p className="text-[9px] font-black text-orange-400 uppercase tracking-tighter mb-1">Điểm GVHD (Hướng dẫn)</p>
+                            <p className="text-lg font-black text-orange-700">{student.supervisor_score ?? '--'}</p>
+                         </div>
+
                          {/* Council Member Detailed Scores */}
                          <div className="bg-emerald-50/30 p-3 rounded-2xl border border-emerald-100/30 mb-6">
                             <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-2 flex items-center gap-1">
@@ -465,14 +472,14 @@ function LecturerSecretaryPage() {
 
                         <div className="mt-6">
                            <div className="flex justify-between items-end mb-2">
-                              <span className="text-[10px] font-black text-primary uppercase">Tổng điểm HĐ</span>
-                              <span className="text-3xl font-black text-primary font-headline">{calculateTotal(student.registration_id, student.reviewer_score)}<span className="text-sm font-bold opacity-30 ml-1">/10.0</span></span>
-                           </div>
+                               <span className="text-[10px] font-black text-primary uppercase">Tổng điểm HĐ</span>
+                               <span className="text-3xl font-black text-primary font-headline">{calculateTotal(student.registration_id, student.reviewer_score, student.supervisor_score)}<span className="text-sm font-bold opacity-30 ml-1">/10.0</span></span>
+                            </div>
                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                              <div 
-                                className="bg-primary h-full transition-all duration-500" 
-                                style={{ width: `${(parseFloat(calculateTotal(student.registration_id, student.reviewer_score)) / 10) * 100}%` }}
-                              />
+                                <div 
+                                 className="bg-primary h-full transition-all duration-500" 
+                                 style={{ width: `${(parseFloat(calculateTotal(student.registration_id, student.reviewer_score, student.supervisor_score)) / 10) * 100}%` }}
+                               />
                            </div>
                         </div>
                       </div>
