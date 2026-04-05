@@ -118,7 +118,7 @@ export function Shell({
         {/* Footer */}
         <footer className="border-t border-outline-variant/10 bg-surface-container-lowest py-6 sm:py-8 px-4 sm:px-6 lg:px-12">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-secondary">
-            <p>© 2024 Ho Chi Minh City University of Technology and Education (HCMCUTE)</p>
+            <p>© 2026 Ho Chi Minh City University of Technology and Education (HCMCUTE)</p>
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
               <a href="#" className="hover:text-primary transition-colors">Hướng dẫn</a>
               <a href="#" className="hover:text-primary transition-colors">Hỗ trợ</a>
