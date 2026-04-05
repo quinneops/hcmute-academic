@@ -790,8 +790,8 @@ function LecturerGradingPage() {
                 <p className="text-lg text-slate-700 font-medium italic leading-relaxed">"{selectedSubmission.thesis_title}"</p>
               </div>
 
-              {/* The Grading Panel - Round 6 = GradingPanel (with scores), other rounds = SupervisorPanel (approve/reject) */}
-              {selectedSubmission.round_number === 6 ? (
+              {/* The Grading Panel - Round 2 & 6 = GradingPanel (with scores), other rounds = SupervisorPanel (approve/reject) */}
+              {[2, 6].includes(selectedSubmission.round_number) ? (
                 <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-ambient-lg p-1 md:p-2">
                   <GradingPanel
                     submission={selectedSubmission}
